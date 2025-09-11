@@ -1,4 +1,4 @@
-# Gemilang Taruna Food & Beverage Menu
+# Gemilang Taruna Food
 
 A modern web application built with Next.js 14 and Tailwind CSS to showcase a local food & beverage menu. This project serves as both a learning experience in modern web development and a practical solution to help my parents' small food business go digital.
 
