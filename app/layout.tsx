@@ -10,6 +10,9 @@ import { Providers } from './providers';
 export const metadata: Metadata = {
 	title: aboutUs.name,
 	description: 'Delicious Indonesian street food including Seblak, Ayam Geprek, Kebab, and traditional drinks',
+	icons: {
+		icon: '/favicon.svg',
+	},
 };
 
 export default function RootLayout({
