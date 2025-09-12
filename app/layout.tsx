@@ -5,7 +5,6 @@ import { GeistMono } from 'geist/font/mono';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { aboutUs } from '@/lib/utils';
-import WhatsAppButton from '@/components/ui/whatsapButton';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
@@ -20,10 +19,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+			<body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} bg-background text-foreground`}>
 				<Providers>{children}</Providers>
 				<Analytics />
-				<WhatsAppButton className="sm:hidden" />
 			</body>
 		</html>
 	);

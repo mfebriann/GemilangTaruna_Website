@@ -5,6 +5,7 @@ import { CartProvider } from '@/contexts/cart-context';
 import { FavoritesProvider } from '@/contexts/favorites-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LoadingScreen } from '@/components/ui/loading-screen';
+import WhatsAppButton from '@/components/ui/whatsapButton';
 
 export function Providers({ children }: { children: React.ReactNode }) {
 	const [isLoading, setIsLoading] = useState(true);
@@ -19,12 +20,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	return (
-		<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="gemilang-taruna-theme">
 			{isLoading ? (
 				<LoadingScreen />
 			) : (
 				<FavoritesProvider>
 					<CartProvider>{children}</CartProvider>
+					<WhatsAppButton className="sm:hidden" />
 				</FavoritesProvider>
 			)}
 		</ThemeProvider>
