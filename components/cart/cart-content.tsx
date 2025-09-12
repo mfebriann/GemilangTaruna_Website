@@ -78,7 +78,7 @@ export function CartContent() {
 			message += `   Jumlah: ${item.quantity}x\n`;
 			message += `   Harga: ${formatCurrency(item.totalPrice)}\n`;
 			if (item.selectedToppings.length > 0) {
-				message += `   Topping: ${item.selectedToppings.map((t) => t.name).join(', ')}\n`;
+				message += `   Topping: ${item.selectedToppings.map((t) => `${t.name}${(t.quantity ?? 1) > 1 ? ` (${t.quantity ?? 1}x)` : ''}`).join(', ')}\n`;
 			}
 			message += `\n`;
 		});
@@ -174,7 +174,7 @@ export function CartContent() {
 												<div className="flex items-start justify-between">
 													<div>
 														<h3 className="font-semibold">{item.menuItem.name}</h3>
-														{item.selectedToppings.length > 0 && <p className="text-sm text-muted-foreground">+ {item.selectedToppings.map((t) => t.name).join(', ')}</p>}
+														{item.selectedToppings.length > 0 && <p className="text-sm text-muted-foreground">+ {item.selectedToppings.map((t) => `${t.name}${(t.quantity ?? 1) > 1 ? ` (${t.quantity ?? 1}x)` : ''}`).join(', ')}</p>}
 														<Badge variant="secondary" className="mt-1 capitalize">
 															{item.menuItem.category}
 														</Badge>
@@ -238,7 +238,7 @@ export function CartContent() {
 
 					{/* Order Summary */}
 					<div className="space-y-6">
-						<Card className="sticky top-4">
+						<Card className="sticky top-20">
 							<CardHeader>
 								<CardTitle>Ringkasan Pesanan</CardTitle>
 							</CardHeader>
@@ -250,7 +250,7 @@ export function CartContent() {
 											<div key={item.id} className="flex justify-between text-sm">
 												<span>
 													{item.quantity}x {item.menuItem.name}
-													{item.selectedToppings.length > 0 && <span className="text-muted-foreground"> + {item.selectedToppings.map((t) => t.name).join(', ')}</span>}
+													{item.selectedToppings.length > 0 && <span className="text-muted-foreground"> + {item.selectedToppings.map((t) => `${t.name}${(t.quantity ?? 1) > 1 ? ` (${t.quantity ?? 1}x)` : ''}`).join(', ')}</span>}
 												</span>
 												<span>{formatCurrency(item.totalPrice)}</span>
 											</div>

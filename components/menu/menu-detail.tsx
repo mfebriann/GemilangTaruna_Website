@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+// Tidak perlu import redux
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -20,30 +21,51 @@ export interface MenuDetailProps {
 }
 
 export function MenuDetail({ menuItem }: MenuDetailProps) {
-	const [selectedToppings, setSelectedToppings] = useState<Topping[]>([]);
+	const [selectedToppings, setSelectedToppings] = useState<Array<Topping & { quantity: number }>>([]);
 	const [quantity, setQuantity] = useState(1);
 	const [isMounted, setIsMounted] = useState(false);
-	const { state } = useCart();
+	const { state, dispatch } = useCart();
+	const { isFavorite, toggleFavorite } = useFavorites();
 
 	useEffect(() => {
 		setIsMounted(true);
 	}, []);
+
+	// Helper: get topping stock from cart
+	function getToppingStock(topping: Topping): number {
+		if (!isMounted) return topping.stock;
+		let used = 0;
+		state.items.forEach((item) => {
+			if (item.menuItem.id === menuItem.id) {
+				item.selectedToppings.forEach((t) => {
+					if (t.id === topping.id) {
+						used += t.quantity ?? 1;
+					}
+				});
+			}
+		});
+		return topping.stock - used;
+	}
+
 	const totalInCart = isMounted ? state.items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0) : 0;
 	const maxQuantity = isMounted ? menuItem.stock - totalInCart : menuItem.stock;
-	const { dispatch } = useCart();
-	const { isFavorite, toggleFavorite } = useFavorites();
 
 	const handleToppingChange = (topping: Topping, checked: boolean) => {
-		if (checked) {
-			setSelectedToppings([...selectedToppings, topping]);
+		const currentStock = getToppingStock(topping);
+		if (checked && currentStock > 0) {
+			setSelectedToppings([...selectedToppings, { ...topping, quantity: 1 }]);
 		} else {
 			setSelectedToppings(selectedToppings.filter((t) => t.id !== topping.id));
 		}
 	};
 
+	const handleToppingQuantity = (toppingId: string, newQty: number, maxStock: number) => {
+		setSelectedToppings(selectedToppings.map((t) => (t.id === toppingId ? { ...t, quantity: Math.max(1, Math.min(newQty, maxStock)) } : t)));
+	};
+
 	const calculateTotalPrice = () => {
-		const toppingsPrice = selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
-		return (menuItem.price + toppingsPrice) * quantity;
+		const toppingsPrice = selectedToppings.reduce((sum, topping) => sum + topping.price * topping.quantity, 0);
+		return menuItem.price * quantity + toppingsPrice;
 	};
 
 	const handleAddToCart = () => {
@@ -66,7 +88,7 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 			type: 'ADD_ITEM',
 			payload: {
 				menuItem,
-				selectedToppings,
+				selectedToppings: selectedToppings.map((t) => ({ ...t, quantity: t.quantity ?? 1 })),
 				quantity,
 			},
 		});
@@ -170,17 +192,34 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 									<CardTitle className="text-lg">Pilih Toppings (Opsional)</CardTitle>
 								</CardHeader>
 								<CardContent className="space-y-4">
-									{menuItem.toppings.map((topping) => (
-										<div key={topping.id} className="flex items-center justify-between">
-											<div className="flex items-center space-x-3">
-												<Checkbox id={topping.id} checked={selectedToppings.some((t) => t.id === topping.id)} onCheckedChange={(checked) => handleToppingChange(topping, checked as boolean)} />
-												<label htmlFor={topping.id} className="text-sm font-medium cursor-pointer">
-													{topping.name}
-												</label>
+									{menuItem.toppings.map((topping) => {
+										const selected = selectedToppings.find((t) => t.id === topping.id);
+										const currentStock = getToppingStock(topping);
+										const isOutOfStock = currentStock <= 0;
+										return (
+											<div key={topping.id} className="flex items-center justify-between">
+												<div className="flex items-center space-x-3">
+													<Checkbox id={topping.id} checked={!!selected} onCheckedChange={(checked) => handleToppingChange(topping, checked as boolean)} disabled={isOutOfStock} />
+													<label htmlFor={topping.id} className={`text-sm font-medium cursor-pointer ${isOutOfStock ? 'text-destructive' : ''}`}>
+														{topping.name} {isOutOfStock && '(Habis)'}
+													</label>
+													{!!selected && (
+														<div className="flex items-center space-x-1 ml-2">
+															<Button variant="outline" size="icon" onClick={() => handleToppingQuantity(topping.id, selected.quantity - 1, currentStock)} disabled={selected.quantity <= 1}>
+																<Minus className="h-3 w-3" />
+															</Button>
+															<span className="text-sm font-semibold w-6 text-center">{selected.quantity}</span>
+															<Button variant="outline" size="icon" onClick={() => handleToppingQuantity(topping.id, selected.quantity + 1, currentStock)} disabled={selected.quantity >= currentStock}>
+																<Plus className="h-3 w-3" />
+															</Button>
+															<span className="text-xs text-muted-foreground ml-2">Stok: {currentStock - selected.quantity}</span>
+														</div>
+													)}
+												</div>
+												<span className="text-sm text-muted-foreground">+{formatCurrency(topping.price)}</span>
 											</div>
-											<span className="text-sm text-muted-foreground">+{formatCurrency(topping.price)}</span>
-										</div>
-									))}
+										);
+									})}
 								</CardContent>
 							</Card>
 						)}
@@ -223,9 +262,9 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 											{selectedToppings.map((topping) => (
 												<div key={topping.id} className="flex justify-between text-sm">
 													<span>
-														• {topping.name} ({quantity}x)
+														• {topping.name} ({topping.quantity}x)
 													</span>
-													<span>{formatCurrency(topping.price * quantity)}</span>
+													<span>{formatCurrency(topping.price * topping.quantity)}</span>
 												</div>
 											))}
 										</div>
