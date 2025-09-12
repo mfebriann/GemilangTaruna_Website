@@ -13,9 +13,9 @@ export const menuData: MenuItem[] = [
 		bestSeller: true,
 		stock: 10,
 		toppings: [
-			{ id: 'sosis', name: 'Sosis', price: 5000 },
-			{ id: 'telur', name: 'Telur', price: 3000 },
-			{ id: 'bakso', name: 'Bakso', price: 4000 },
+			{ id: 'seblak-sosis', name: 'Sosis', price: 5000, stock: 10 },
+			{ id: 'seblak-telur', name: 'Telur', price: 3000, stock: 10 },
+			{ id: 'seblak-bakso', name: 'Bakso', price: 4000, stock: 10 },
 		],
 	},
 	{
@@ -29,8 +29,8 @@ export const menuData: MenuItem[] = [
 		bestSeller: true,
 		stock: 8,
 		toppings: [
-			{ id: 'keju', name: 'Keju', price: 3000 },
-			{ id: 'extra-sambal', name: 'Extra Sambal', price: 2000 },
+			{ id: 'ayam-geprek-sosis', name: 'Sosis', price: 3000, stock: 8 },
+			{ id: 'ayam-geprek-extra-sambal', name: 'Extra Sambal', price: 2000, stock: 8 },
 		],
 	},
 	{
@@ -44,8 +44,8 @@ export const menuData: MenuItem[] = [
 		bestSeller: false,
 		stock: 5,
 		toppings: [
-			{ id: 'extra-daging', name: 'Extra Daging', price: 8000 },
-			{ id: 'keju-mozarella', name: 'Keju Mozarella', price: 5000 },
+			{ id: 'kebab-beef-extra-daging', name: 'Extra Daging', price: 8000, stock: 5 },
+			{ id: 'kebab-beef-keju-mozarella', name: 'Keju Mozarella', price: 5000, stock: 5 },
 		],
 	},
 	{
@@ -81,8 +81,8 @@ export const menuData: MenuItem[] = [
 		bestSeller: false,
 		stock: 0,
 		toppings: [
-			{ id: 'telur-mata-sapi', name: 'Telur Mata Sapi', price: 3000 },
-			{ id: 'kornet', name: 'Kornet', price: 5000 },
+			{ id: 'mie-sarimi-telur-mata-sapi', name: 'Telur Mata Sapi', price: 3000, stock: 0 },
+			{ id: 'mie-sarimi-kornet', name: 'Kornet', price: 5000, stock: 0 },
 		],
 	},
 
@@ -109,9 +109,9 @@ export const menuData: MenuItem[] = [
 		bestSeller: true,
 		stock: 15,
 		toppings: [
-			{ id: 'jelly', name: 'Jelly', price: 2000 },
-			{ id: 'susu', name: 'Susu', price: 3000 },
-			{ id: 'es-krim', name: 'Es Krim', price: 5000 },
+			{ id: 'pop-ice-jelly', name: 'Jelly', price: 2000, stock: 15 },
+			{ id: 'pop-ice-susu', name: 'Susu', price: 3000, stock: 15 },
+			{ id: 'pop-ice-es-krim', name: 'Es Krim', price: 5000, stock: 15 },
 		],
 	},
 	{
