@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// Tidak perlu import redux
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -10,22 +9,26 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Star, Plus, Minus, ShoppingCart, Clock, Heart } from 'lucide-react';
-import type { MenuItem, Topping } from '@/contexts/cart-context';
+import type { CartItem, MenuItem, Topping } from '@/contexts/cart-context';
 import { useCart } from '@/contexts/cart-context';
 import { useFavorites } from '@/contexts/favorites-context';
 import { formatCurrency } from '@/lib/utils';
-import { toast } from 'react-hot-toast';
+import { toast, Toaster } from 'react-hot-toast';
+import { useSearchParams } from 'next/navigation';
 
 export interface MenuDetailProps {
 	menuItem: MenuItem;
+	editItem?: CartItem | null;
 }
 
-export function MenuDetail({ menuItem }: MenuDetailProps) {
+export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	const [selectedToppings, setSelectedToppings] = useState<Array<Topping & { quantity: number }>>([]);
-	const [quantity, setQuantity] = useState(1);
 	const [isMounted, setIsMounted] = useState(false);
 	const { state, dispatch } = useCart();
 	const { isFavorite, toggleFavorite } = useFavorites();
+	const searchParams = useSearchParams();
+	const isEditMode = searchParams.get('edit') === '1';
+	const [quantity, setQuantity] = useState(isEditMode && editItem ? editItem.quantity : 1);
 
 	useEffect(() => {
 		setIsMounted(true);
@@ -34,6 +37,11 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 	// Helper: get topping stock from cart
 	function getToppingStock(topping: Topping): number {
 		if (!isMounted) return topping.stock;
+
+		if (isEditMode) {
+			return topping.stock;
+		}
+
 		let used = 0;
 		state.items.forEach((item) => {
 			if (item.menuItem.id === menuItem.id) {
@@ -47,8 +55,9 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 		return topping.stock - used;
 	}
 
-	const totalInCart = isMounted ? state.items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0) : 0;
-	const maxQuantity = isMounted ? menuItem.stock - totalInCart : menuItem.stock;
+	const totalInCart = state.items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0);
+	const totalInCartExcludingEdit = isEditMode && editItem ? totalInCart - editItem.quantity : totalInCart;
+	const maxQuantity = isEditMode ? menuItem.stock : menuItem.stock - totalInCartExcludingEdit;
 
 	const handleToppingChange = (topping: Topping, checked: boolean) => {
 		const currentStock = getToppingStock(topping);
@@ -98,9 +107,28 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 			position: 'top-center',
 		});
 
-		// Reset form
 		setQuantity(1);
 		setSelectedToppings([]);
+	};
+
+	const handleEditOrder = () => {
+		const existingItem = state.items.find((item) => item.menuItem.id === menuItem.id);
+		if (!existingItem) return;
+
+		dispatch({
+			type: 'EDIT_ITEM',
+			payload: {
+				id: existingItem.id,
+				menuItem,
+				selectedToppings: selectedToppings.map((t) => ({ ...t, quantity: t.quantity ?? 1 })),
+				quantity,
+			},
+		});
+
+		toast.success(`${menuItem.name} berhasil diubah!`, {
+			duration: 1500,
+			position: 'top-center',
+		});
 	};
 
 	return (
@@ -279,15 +307,24 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 						</Card>
 
 						{/* Add to Cart Button */}
-						<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.available || maxQuantity <= 0}>
-							<ShoppingCart className="h-5 w-5 mr-2" />
-							{menuItem.available ? 'Tambah ke Keranjang' : 'Menu Tidak Tersedia'}
-						</Button>
+						{isEditMode ? (
+							<Button onClick={handleEditOrder} size="lg" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={!isMounted || !menuItem.available}>
+								<ShoppingCart className="h-5 w-5 mr-2" />
+								Ubah Pesanan
+							</Button>
+						) : (
+							<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.available || maxQuantity <= 0}>
+								<ShoppingCart className="h-5 w-5 mr-2" />
+								Tambah ke Keranjang
+							</Button>
+						)}
+
 						{maxQuantity <= 0 && <p className="text-sm text-destructive text-center mt-2">Stok habis, tidak bisa menambah ke keranjang.</p>}
 						{!menuItem.available && <p className="text-sm text-muted-foreground text-center">Maaf, menu ini sedang tidak tersedia. Silakan pilih menu lainnya.</p>}
 					</div>
 				</div>
 			</div>
+			<Toaster />
 		</section>
 	);
 }
