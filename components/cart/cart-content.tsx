@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, MessageCircle } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, MessageCircle, StickyNote } from 'lucide-react';
 import { Edit } from 'lucide-react';
-import { CartItem, MenuItem, Topping, useCart } from '@/contexts/cart-context';
+import { CartItem, Topping, useCart } from '@/contexts/cart-context';
 import { aboutUs, formatCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
@@ -26,6 +26,8 @@ export function CartContent() {
 	}
 	const { state, dispatch } = useCart();
 	const [isMounted, setIsMounted] = useState(false);
+	const [openNotes, setOpenNotes] = useState<{ [key: string]: boolean }>({});
+	const [isCheckoutDisabled, setIsCheckoutDisabled] = useState<boolean>(false);
 
 	useEffect(() => {
 		setIsMounted(true);
@@ -34,24 +36,6 @@ export function CartContent() {
 	if (!isMounted) {
 		return null; // atau loading skeleton
 	}
-
-	const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
-		toast.dismiss('quantity-set-toast');
-		dispatch({
-			type: 'UPDATE_QUANTITY',
-			payload: { id: itemId, quantity: newQuantity },
-		});
-		toast('Jumlah item diubah', {
-			id: 'quantity-set-toast',
-			duration: 1500,
-			position: 'top-center',
-			icon: '🔢',
-			iconTheme: { primary: '#000', secondary: '#fff' },
-			ariaProps: { role: 'status', 'aria-live': 'polite' },
-			removeDelay: 1000,
-			toasterId: 'default',
-		});
-	};
 
 	const handleRemoveItem = (itemId: string) => {
 		dispatch({
@@ -83,6 +67,8 @@ export function CartContent() {
 			return;
 		}
 
+		setIsCheckoutDisabled(true);
+
 		let message = '*PESANAN DARI WEBSITE*\n\n';
 		state.items.forEach((item, index) => {
 			message += `${index + 1}. ${item.menuItem.name}\n`;
@@ -91,21 +77,31 @@ export function CartContent() {
 			if (item.selectedToppings.length > 0) {
 				message += `   Topping: ${item.selectedToppings.map((t) => `${t.name}${(t.quantity ?? 1) > 1 ? ` (${t.quantity ?? 1}x)` : ''}`).join(', ')}\n`;
 			}
+			if (item.notes) {
+				message += `   Catatan: ${item.notes}\n`;
+			}
 			message += `\n`;
 		});
+
 		message += `*TOTAL: ${formatCurrency(state.total)}*\n\n`;
 		message += 'Mohon konfirmasi pesanan ini. Terima kasih!';
 		const whatsappUrl = `https://wa.me/${aboutUs.whatsapp}?text=${encodeURIComponent(message)}`;
 		window.open(whatsappUrl, '_blank');
-		toast('Pesanan dikirim via WhatsApp!', {
-			duration: 2000,
+
+		const duration = 4000;
+		toast.success('Pesanan berhasil dikirim ke WhatsApp', {
+			duration,
 			position: 'top-center',
-			icon: '📤',
-			iconTheme: { primary: '#000', secondary: '#fff' },
 			ariaProps: { role: 'status', 'aria-live': 'polite' },
 			removeDelay: 1000,
 			toasterId: 'default',
 		});
+
+		setTimeout(() => {
+			localStorage.removeItem('warung-cart');
+			dispatch({ type: 'CLEAR_CART' });
+			setIsCheckoutDisabled(false);
+		}, duration + 500);
 	};
 
 	const handleClearCart = () => {
@@ -192,11 +188,24 @@ export function CartContent() {
 														</div>
 														<div className="font-semibold">{formatCurrency(item.totalPrice)}</div>
 													</div>
-													<div className="space-y-1">
+													<div className="space-y-1 text-right">
 														<Badge variant="secondary" className="mt-1 capitalize">
 															{item.menuItem.category}
 														</Badge>
 														<div className="flex gap-2">
+															<Button
+																variant="ghost"
+																size="icon"
+																aria-label="Notes"
+																onClick={() =>
+																	setOpenNotes((prev) => ({
+																		...prev,
+																		[item.id]: !prev[item.id],
+																	}))
+																}
+															>
+																<StickyNote className={`h-4 w-4 ${item.notes ? 'text-primary' : 'text-muted-foreground'}`} />
+															</Button>
 															<Link href={buildEditUrl(item)}>
 																<Button variant="ghost" size="icon" aria-label="Edit">
 																	<Edit className="h-4 w-4" />
@@ -208,6 +217,20 @@ export function CartContent() {
 														</div>
 													</div>
 												</div>
+
+												{openNotes[item.id] && (
+													<textarea
+														value={item.notes ?? ''}
+														placeholder="Tambahkan catatan (contoh: tanpa es, pedas)"
+														className="w-full mt-2 border rounded-md p-2 text-sm"
+														onChange={(e) =>
+															dispatch({
+																type: 'UPDATE_NOTES',
+																payload: { id: item.id, notes: e.target.value },
+															})
+														}
+													/>
+												)}
 											</div>
 										</div>
 									</CardContent>
@@ -253,7 +276,7 @@ export function CartContent() {
 								</div>
 
 								{/* Checkout Button */}
-								<Button onClick={handleCheckout} size="lg" className="w-full">
+								<Button onClick={handleCheckout} size="lg" className="w-full" disabled={isCheckoutDisabled}>
 									<MessageCircle className="h-5 w-5 mr-2" />
 									Pesan via WhatsApp
 								</Button>
