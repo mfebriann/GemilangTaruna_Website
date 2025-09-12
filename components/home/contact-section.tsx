@@ -75,7 +75,7 @@ export function ContactSection() {
 					<div className="space-y-4">
 						<div className="aspect-[4/3] rounded-lg overflow-hidden bg-muted">
 							<iframe
-								src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.777137630999!2d106.85791830989471!3d-6.160595293800849!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f56d6c8921b7%3A0x151971d75c92e4e8!2sWarung%20Gemilang%20Taruna%20Kemayoran!5e0!3m2!1sen!2sid!4v1757574907585!5m2!1sen!2sid"
+								src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15866.968287692815!2d106.85323844637077!3d-6.1652858523013!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f56d6c8921b7%3A0x151971d75c92e4e8!2sWarung%20Gemilang%20Taruna%20Kemayoran!5e0!3m2!1sen!2sid!4v1757668851532!5m2!1sen!2sid"
 								width="100%"
 								height="100%"
 								style={{ border: 0 }}
