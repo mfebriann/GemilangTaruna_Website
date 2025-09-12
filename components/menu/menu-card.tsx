@@ -23,7 +23,7 @@ export const MenuCard: React.FC<{ items: MenuItem[]; className?: string }> = ({ 
 		<div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 ${className}`}>
 			<Toaster />
 			{items.map((item: MenuItem) => (
-				<Card key={item.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden">
+				<Card key={item.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden pt-0">
 					<div className="relative aspect-[4/3] overflow-hidden">
 						<div className="relative w-full h-full">
 							<Image
