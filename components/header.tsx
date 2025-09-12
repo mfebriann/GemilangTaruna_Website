@@ -2,14 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Heart, ShoppingCart, MessageCircle, Utensils, Menu, Home, NotebookText, Info, Phone } from 'lucide-react';
+import { Heart, ShoppingCart, Utensils, Menu, Home, NotebookText, Info, Phone, SunMedium } from 'lucide-react';
 import { useCart } from '@/contexts/cart-context';
 import { useFavorites } from '@/contexts/favorites-context';
 import { aboutUs, cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import WhatsAppButton from './ui/whatsapButton';
 
 const navigation = [
 	{ name: 'Home', href: '/', icon: Home },
@@ -29,173 +27,90 @@ export function Header() {
 		setIsHydrated(true);
 	}, []);
 
-	const handleWhatsAppClick = () => {
-		const phoneNumber = '6281234567890'; // Replace with actual WhatsApp number
-		const message = 'Halo! Saya ingin bertanya tentang menu warung.';
-		const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-		window.open(whatsappUrl, '_blank');
-	};
-
-	const handleMobileNavClick = () => {
-		setIsMobileMenuOpen(false);
+	const toggleMobileMenu = () => {
+		setIsMobileMenuOpen((prev) => !prev);
 	};
 
 	return (
-		<header className="sticky top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background/95">
-			<div className="container mx-auto px-4">
-				<div className="flex h-16 items-center justify-between">
-					<div className="flex items-center space-x-3">
-						<Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-							<SheetTrigger asChild>
-								<div>
-									<Button variant="ghost" size="icon" className="md:hidden">
-										<Menu className="h-5 w-5" />
-									</Button>
+		<>
+			<header className="sticky top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background/95">
+				<div className="container mx-auto px-4">
+					<div className="flex h-16 items-center justify-between">
+						<div className="flex items-center space-x-3">
+							{/* Mobile Menu Button */}
+							<button onClick={toggleMobileMenu} className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-primary-foreground" aria-label="Open mobile menu">
+								<Menu className="h-5 w-5" />
+							</button>
+
+							{/* Logo */}
+							<Link href="/" className="flex items-center space-x-2">
+								<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+									<Utensils className="h-5 w-5" />
 								</div>
-							</SheetTrigger>
-							<SheetContent side="left" className="w-4/5 sm:w-80 p-0 [&>button]:hidden md:hidden">
-								<div className="flex flex-col h-full">
-									<SheetHeader className="p-4 border-b">
-										<div className="flex items-center space-x-3">
-											<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-												<Utensils className="h-6 w-6" />
-											</div>
-											<SheetTitle className="text-lg font-bold text-primary">{aboutUs.name}</SheetTitle>
-										</div>
-									</SheetHeader>
+								<span className="text-xl font-bold text-primary hidden sm:inline">{aboutUs.name}</span>
+							</Link>
+						</div>
 
-									<div className="flex-1 overflow-y-auto">
-										{/* Navigation Links */}
-										<nav className="p-4 space-y-2">
-											{navigation.map((item) => {
-												const Icon = item.icon;
-												return (
-													<Link
-														key={item.name}
-														href={item.href}
-														onClick={handleMobileNavClick}
-														className={cn(
-															'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary/10',
-															pathname === item.href ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:text-primary'
-														)}
-													>
-														<Icon className="h-5 w-5" />
-														<span>{item.name}</span>
-													</Link>
-												);
-											})}
-										</nav>
+						{/* Navigation */}
+						<nav className="hidden md:flex items-center space-x-6">
+							{navigation.map((item) => {
+								return (
+									<Link key={item.name} href={item.href} className={cn('flex items-center text-sm font-medium transition-colors hover:text-primary', pathname === item.href ? 'text-primary' : 'text-foreground')}>
+										{item.name}
+									</Link>
+								);
+							})}
+						</nav>
 
-										{/* Quick Actions */}
-										<div className="px-6 py-4 border-t">
-											<h3 className="text-sm font-semibold text-muted-foreground mb-3">Quick Actions</h3>
-											<div className="space-y-2">
-												<Link
-													href="/favorites"
-													onClick={handleMobileNavClick}
-													className="flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary/10 text-foreground hover:text-primary"
-												>
-													<div className="flex items-center space-x-3">
-														<Heart className="h-5 w-5" />
-														<span>Favorites</span>
-													</div>
-													{isHydrated && favoritesState.items.length > 0 && (
-														<Badge variant="secondary" className="h-6 w-6 rounded-full p-0 text-xs">
-															{favoritesState.items.length}
-														</Badge>
-													)}
-												</Link>
+						{/* Right side actions */}
+						<div className="flex items-center space-x-2">
+							{/* Wishlist */}
+							<Link href="/favorites">
+								<button className="relative p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
+									<Heart className="h-5 w-5 text-gray-700" />
+									{isHydrated && favoritesState.items.length > 0 && <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">{favoritesState.items.length}</span>}
+								</button>
+							</Link>
 
-												<Link
-													href="/cart"
-													onClick={handleMobileNavClick}
-													className="flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary/10 text-foreground hover:text-primary"
-												>
-													<div className="flex items-center space-x-3">
-														<ShoppingCart className="h-5 w-5" />
-														<span>Cart</span>
-													</div>
-													{isHydrated && state.items.length > 0 && (
-														<Badge variant="secondary" className="h-6 w-6 rounded-full p-0 text-xs">
-															{state.items.reduce((sum, item) => sum + item.quantity, 0)}
-														</Badge>
-													)}
-												</Link>
-											</div>
-										</div>
-									</div>
+							{/* Cart */}
+							<Link href="/cart">
+								<button className="relative p-2 rounded-lg bg-gray-100 hover:bg-gray-200">
+									<ShoppingCart className="h-5 w-5 text-gray-700" />
+									{isHydrated && state.items.length > 0 && (
+										<span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">{state.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
+									)}
+								</button>
+							</Link>
 
-									{/* WhatsApp Button */}
-									<div className="p-6 border-t">
-										<Button
-											onClick={() => {
-												handleWhatsAppClick();
-												handleMobileNavClick();
-											}}
-											className="w-full bg-green-500 hover:bg-green-600 text-white"
-										>
-											<MessageCircle className="h-4 w-4 mr-2" />
-											Contact via WhatsApp
-										</Button>
-									</div>
-								</div>
-							</SheetContent>
-						</Sheet>
-
-						{/* Logo */}
-						<Link href="/" className="flex items-center space-x-2">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-								<Utensils className="h-5 w-5" />
-							</div>
-							<span className="text-xl font-bold text-primary hidden sm:inline">{aboutUs.name}</span>
-						</Link>
-					</div>
-
-					{/* Navigation */}
-					<nav className="hidden md:flex items-center space-x-6">
-						{navigation.map((item) => {
-							return (
-								<Link key={item.name} href={item.href} className={cn('flex items-center text-sm font-medium transition-colors hover:text-primary', pathname === item.href ? 'text-primary' : 'text-foreground')}>
-									{item.name}
-								</Link>
-							);
-						})}
-					</nav>
-
-					{/* Right side actions */}
-					<div className="flex items-center space-x-2">
-						{/* Wishlist */}
-						<Link href="/favorites">
-							<Button variant="ghost" size="icon" className="relative text-foreground hover:text-primary">
-								<Heart className="h-5 w-5" />
-								{isHydrated && favoritesState.items.length > 0 && (
-									<Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 rounded-full p-0 text-xs">
-										{favoritesState.items.length}
-									</Badge>
-								)}
-							</Button>
-						</Link>
-
-						{/* Cart */}
-						<Link href="/cart">
-							<Button variant="ghost" size="icon" className="relative text-foreground hover:text-primary">
-								<ShoppingCart className="h-5 w-5" />
-								{isHydrated && state.items.length > 0 && (
-									<Badge variant="destructive" className="absolute -right-2 -top-2 h-5 w-5 rounded-full p-0 text-xs">
-										{state.items.reduce((sum, item) => sum + item.quantity, 0)}
-									</Badge>
-								)}
-							</Button>
-						</Link>
-
-						{/* WhatsApp */}
-						<Button onClick={handleWhatsAppClick} size="sm" className="bg-green-500 hover:bg-green-600 text-white hidden sm:flex">
-							<MessageCircle className="h-4 w-4 mr-2" />
-							<span className="hidden sm:inline">WhatsApp</span>
-						</Button>
+							{/* WhatsApp */}
+							<WhatsAppButton className="hidden sm:flex" />
+						</div>
 					</div>
 				</div>
-			</div>
-		</header>
+			</header>
+
+			{/* Mobile Menu Modal */}
+			{isMobileMenuOpen && (
+				<div className="flex fixed inset-0 z-50 bg-black/50 bg-opacity-50 items-center justify-center backdrop-blur supports-[backdrop-filter]:bg-black/80 md:hidden">
+					<div className="bg-white w-4/5 sm:w-80 p-4 rounded-lg shadow-lg">
+						<button onClick={toggleMobileMenu} className="absolute top-2 right-2 w-10 h-10 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Close mobile menu">
+							✕
+						</button>
+						<nav className="space-y-4">
+							{navigation.map((item) => (
+								<Link
+									key={item.name}
+									href={item.href}
+									onClick={toggleMobileMenu}
+									className={cn('block px-4 py-2 rounded-lg text-sm font-medium', pathname === item.href ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-primary/10')}
+								>
+									{item.name}
+								</Link>
+							))}
+						</nav>
+					</div>
+				</div>
+			)}
+		</>
 	);
 }

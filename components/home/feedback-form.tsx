@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { MessageCircle, Send } from 'lucide-react';
-// import { toast } from 'react-hot-toast';
-import { Toaster } from '@/components/ui/toaster';
+import toast, { Toaster } from 'react-hot-toast';
 import { aboutUs } from '@/lib/utils';
 
 export function FeedbackForm() {
@@ -22,7 +21,10 @@ export function FeedbackForm() {
 		e.preventDefault();
 
 		if (!name.trim() || !suggestion.trim()) {
-			// toast removed
+			toast.error('Mohon isi semua field yang diperlukan', {
+				duration: 2000,
+				position: 'top-center',
+			});
 			return;
 		}
 
@@ -39,9 +41,16 @@ export function FeedbackForm() {
 			setName('');
 			setSuggestion('');
 
-			// toast removed
+			toast.success('Terima kasih atas feedback Anda!', {
+				duration: 2000,
+				position: 'top-center',
+				icon: '👋',
+			});
 		} catch (error) {
-			// toast removed
+			toast.error('Maaf, terjadi kesalahan. Silakan coba lagi.', {
+				duration: 2000,
+				position: 'top-center',
+			});
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -93,6 +102,7 @@ export function FeedbackForm() {
 					</Card>
 				</div>
 			</div>
+			<Toaster />
 		</section>
 	);
 }

@@ -25,11 +25,13 @@ export function CartContent() {
 	}
 
 	const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+		toast.dismiss('quantity-set-toast');
 		dispatch({
 			type: 'UPDATE_QUANTITY',
 			payload: { id: itemId, quantity: newQuantity },
 		});
 		toast('Jumlah item diubah', {
+			id: 'quantity-set-toast',
 			duration: 1500,
 			position: 'top-center',
 			icon: '🔢',
@@ -183,7 +185,7 @@ export function CartContent() {
 												</div>
 
 												{/* Quantity and Price */}
-												<div className="flex flex-wrap gap-3 md:flex-row md:items-center md:justify-between">
+												<div className="flex flex-wrap gap-3 justify-between sm:flex-row sm:items-center">
 													<div className="flex items-center flex-wrap gap-3 space-x-2">
 														<div className="flex items-center space-x-2">
 															<Button variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)} disabled={!isMounted || item.quantity <= 1}>

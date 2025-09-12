@@ -13,7 +13,7 @@ import type { MenuItem, Topping } from '@/contexts/cart-context';
 import { useCart } from '@/contexts/cart-context';
 import { useFavorites } from '@/contexts/favorites-context';
 import { formatCurrency } from '@/lib/utils';
-import { toast, Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 
 export interface MenuDetailProps {
 	menuItem: MenuItem;
@@ -48,26 +48,16 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 
 	const handleAddToCart = () => {
 		if (!menuItem.available) {
-			toast('Menu tidak tersedia', {
+			toast.error('Menu tidak tersedia', {
 				duration: 1500,
 				position: 'top-center',
-				icon: '⛔',
-				iconTheme: { primary: '#000', secondary: '#fff' },
-				ariaProps: { role: 'status', 'aria-live': 'polite' },
-				removeDelay: 1000,
-				toasterId: 'default',
 			});
 			return;
 		}
 		if (quantity > maxQuantity) {
-			toast(`Stok tidak cukup. Sisa stok hanya ${maxQuantity}`, {
+			toast.error(`Stok tidak cukup. Sisa stok hanya ${maxQuantity}`, {
 				duration: 1500,
 				position: 'top-center',
-				icon: '📦',
-				iconTheme: { primary: '#000', secondary: '#fff' },
-				ariaProps: { role: 'status', 'aria-live': 'polite' },
-				removeDelay: 1000,
-				toasterId: 'default',
 			});
 			return;
 		}
@@ -81,14 +71,9 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 			},
 		});
 
-		toast(`${quantity}x ${menuItem.name} ditambahkan ke keranjang!`, {
+		toast.success(`${quantity}x ${menuItem.name} ditambahkan ke keranjang!`, {
 			duration: 1500,
 			position: 'top-center',
-			icon: '🛒',
-			iconTheme: { primary: '#000', secondary: '#fff' },
-			ariaProps: { role: 'status', 'aria-live': 'polite' },
-			removeDelay: 1000,
-			toasterId: 'default',
 		});
 
 		// Reset form
@@ -126,24 +111,14 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 										toggleFavorite(menuItem);
 										setTimeout(() => {
 											if (isFavorite(menuItem.id)) {
-												toast(`${menuItem.name} ditambahkan ke favorit!`, {
+												toast.success(`${menuItem.name} ditambahkan ke favorit!`, {
 													duration: 1500,
 													position: 'top-center',
-													icon: '❤️',
-													iconTheme: { primary: '#000', secondary: '#fff' },
-													ariaProps: { role: 'status', 'aria-live': 'polite' },
-													removeDelay: 1000,
-													toasterId: 'default',
 												});
 											} else {
-												toast(`${menuItem.name} dihapus dari favorit`, {
+												toast.error(`${menuItem.name} dihapus dari favorit`, {
 													duration: 1500,
 													position: 'top-center',
-													icon: '💔',
-													iconTheme: { primary: '#000', secondary: '#fff' },
-													ariaProps: { role: 'status', 'aria-live': 'polite' },
-													removeDelay: 1000,
-													toasterId: 'default',
 												});
 											}
 										}, 100);
@@ -271,11 +246,9 @@ export function MenuDetail({ menuItem }: MenuDetailProps) {
 						</Button>
 						{maxQuantity <= 0 && <p className="text-sm text-destructive text-center mt-2">Stok habis, tidak bisa menambah ke keranjang.</p>}
 						{!menuItem.available && <p className="text-sm text-muted-foreground text-center">Maaf, menu ini sedang tidak tersedia. Silakan pilih menu lainnya.</p>}
-						<Toaster />
 					</div>
 				</div>
 			</div>
-			<Toaster />
 		</section>
 	);
 }
