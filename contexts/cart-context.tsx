@@ -29,6 +29,7 @@ export interface CartItem {
 	quantity: number;
 	selectedToppings: Topping[];
 	totalPrice: number;
+	notes?: string;
 }
 
 interface CartState {
@@ -41,6 +42,7 @@ type CartAction =
 	| { type: 'REMOVE_ITEM'; payload: string }
 	| { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
 	| { type: 'EDIT_ITEM'; payload: { id: string; menuItem: MenuItem; selectedToppings: Topping[]; quantity: number } }
+	| { type: 'UPDATE_NOTES'; payload: { id: string; notes: string } }
 	| { type: 'CLEAR_CART' }
 	| { type: 'LOAD_CART'; payload: CartState };
 
@@ -208,6 +210,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 				return item;
 			});
 
+			return {
+				items: updatedItems,
+				total: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+			};
+		}
+
+		case 'UPDATE_NOTES': {
+			const updatedItems = items.map((item) => (item.id === action.payload.id ? { ...item, notes: action.payload.notes } : item));
 			return {
 				items: updatedItems,
 				total: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
