@@ -40,6 +40,7 @@ type CartAction =
 	| { type: 'ADD_ITEM'; payload: { menuItem: MenuItem; selectedToppings: Topping[]; quantity?: number } }
 	| { type: 'REMOVE_ITEM'; payload: string }
 	| { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
+	| { type: 'EDIT_ITEM'; payload: { id: string; menuItem: MenuItem; selectedToppings: Topping[]; quantity: number } }
 	| { type: 'CLEAR_CART' }
 	| { type: 'LOAD_CART'; payload: CartState };
 
@@ -176,6 +177,32 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 						...item,
 						quantity,
 						totalPrice: unitPrice * quantity,
+					};
+				}
+				return item;
+			});
+
+			return {
+				items: updatedItems,
+				total: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+			};
+		}
+
+		case 'EDIT_ITEM': {
+			const { id, menuItem, selectedToppings, quantity } = action.payload;
+
+			const updatedItems = items.map((item) => {
+				if (item.id === id) {
+					// Hitung harga unit baru
+					const toppingsPrice = selectedToppings.reduce((sum, topping) => sum + topping.price * (topping.quantity ?? 1), 0);
+					const unitPrice = menuItem.price + toppingsPrice / (quantity || 1); // rata-rata per unit
+
+					return {
+						...item,
+						menuItem: { ...menuItem },
+						quantity,
+						selectedToppings,
+						totalPrice: menuItem.price * quantity + toppingsPrice,
 					};
 				}
 				return item;
