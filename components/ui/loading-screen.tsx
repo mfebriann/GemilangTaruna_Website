@@ -68,7 +68,6 @@ export function LoadingScreen() {
 							{/* Loading text with ellipsis animation */}
 							<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-sm text-muted-foreground">
 								<span className="inline-flex items-center gap-1">
-									Loading...
 									<motion.span
 										animate={{
 											opacity: [0, 1, 0],
@@ -79,7 +78,7 @@ export function LoadingScreen() {
 											repeatType: 'loop',
 										}}
 									>
-										...
+										Loading...
 									</motion.span>
 								</span>
 							</motion.div>
