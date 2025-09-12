@@ -7,12 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, MessageCircle } from 'lucide-react';
-import { useCart } from '@/contexts/cart-context';
+import { Edit } from 'lucide-react';
+import { CartItem, MenuItem, Topping, useCart } from '@/contexts/cart-context';
 import { aboutUs, formatCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
 
 export function CartContent() {
+	// Helper to build edit URL with quantity and topping quantities
+	function buildEditUrl(item: CartItem) {
+		const params = new URLSearchParams();
+		params.set('edit', '1');
+		params.set('quantity', String(item.quantity));
+		item.selectedToppings.forEach((topping: Topping) => {
+			params.set(`topping_${topping.id}`, String(topping.quantity ?? 1));
+		});
+		return `/menu/${item.menuItem.id}?${params.toString()}`;
+	}
 	const { state, dispatch } = useCart();
 	const [isMounted, setIsMounted] = useState(false);
 
@@ -164,61 +175,37 @@ export function CartContent() {
 							state.items.map((item) => (
 								<Card key={item.id}>
 									<CardContent className="p-4">
-										<div className="flex flex-wrap gap-5">
+										<div className="flex flex-col sm:flex-row gap-5">
 											{/* Item Image */}
-											<Link href={`/menu/${item.menuItem.id}`} className="relative w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+											<Link href={`/menu/${item.menuItem.id}`} className="relative w-full h-auto aspect-[4/3] sm:aspect-auto sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
 												<Image src={item.menuItem.image || '/placeholder.svg'} alt={item.menuItem.name} fill className="object-cover" />
 											</Link>
 											{/* Item Details */}
 											<div className="flex-1 space-y-2">
-												<div className="flex items-start justify-between">
-													<div>
-														<h3 className="font-semibold">{item.menuItem.name}</h3>
-														{item.selectedToppings.length > 0 && <p className="text-sm text-muted-foreground">+ {item.selectedToppings.map((t) => `${t.name}${(t.quantity ?? 1) > 1 ? ` (${t.quantity ?? 1}x)` : ''}`).join(', ')}</p>}
+												<div className="flex flex-wrap gap-2 items-start justify-between">
+													<div className="space-y-1">
+														<div>
+															<h3 className="font-semibold">
+																{item.menuItem.name} ({item.quantity}x)
+															</h3>
+															{item.selectedToppings.length > 0 && <p className="text-sm text-muted-foreground">+ {item.selectedToppings.map((t) => `${t.name}${(t.quantity ?? 1) > 1 ? ` (${t.quantity ?? 1}x)` : ''}`).join(', ')}</p>}
+														</div>
+														<div className="font-semibold">{formatCurrency(item.totalPrice)}</div>
+													</div>
+													<div className="space-y-1">
 														<Badge variant="secondary" className="mt-1 capitalize">
 															{item.menuItem.category}
 														</Badge>
-													</div>
-													<Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive">
-														<Trash2 className="h-4 w-4" />
-													</Button>
-												</div>
-
-												{/* Quantity and Price */}
-												<div className="flex flex-wrap gap-3 justify-between sm:flex-row sm:items-center">
-													<div className="flex items-center flex-wrap gap-3 space-x-2">
-														<div className="flex items-center space-x-2">
-															<Button variant="outline" size="icon" className="h-8 w-8 bg-transparent" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)} disabled={!isMounted || item.quantity <= 1}>
-																<Minus className="h-3 w-3" />
-															</Button>
-															<span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
-															<Button
-																variant="outline"
-																size="icon"
-																className="h-8 w-8 bg-transparent"
-																onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-																disabled={
-																	!isMounted ||
-																	(() => {
-																		// Hitung total quantity yang sudah ada di cart untuk menu yang sama
-																		const totalQtyInCart = state.items
-																			.filter(
-																				(cartItem) => cartItem.menuItem.id === item.menuItem.id && cartItem.id !== item.id // Exclude current item
-																			)
-																			.reduce((sum, cartItem) => sum + cartItem.quantity, 0);
-
-																		// Cek apakah penambahan quantity akan melebihi stock
-																		return item.quantity + totalQtyInCart >= item.menuItem.stock;
-																	})()
-																}
-															>
-																<Plus className="h-3 w-3" />
+														<div className="flex gap-2">
+															<Link href={buildEditUrl(item)}>
+																<Button variant="ghost" size="icon" aria-label="Edit">
+																	<Edit className="h-4 w-4" />
+																</Button>
+															</Link>
+															<Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive">
+																<Trash2 className="h-4 w-4" />
 															</Button>
 														</div>
-													</div>
-													<div className="sm:text-right">
-														<div className="font-semibold">{formatCurrency(item.totalPrice)}</div>
-														<div className="text-xs text-muted-foreground">{formatCurrency(item.totalPrice / item.quantity)} per item</div>
 													</div>
 												</div>
 											</div>
