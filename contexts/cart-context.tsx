@@ -19,6 +19,8 @@ export interface Topping {
 	id: string;
 	name: string;
 	price: number;
+	stock: number;
+	quantity?: number;
 }
 
 export interface CartItem {
@@ -84,11 +86,31 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
 			if (existingItemIndex > -1) {
 				const updatedItems = [...items];
-				const newQuantity = updatedItems[existingItemIndex].quantity + quantity;
+				const existingItem = updatedItems[existingItemIndex];
+				const newQuantity = existingItem.quantity + quantity;
+
+				// Gabungkan quantity topping
+				const mergedToppings = existingItem.selectedToppings.map((oldTopping) => {
+					const newTopping = selectedToppings.find((t) => t.id === oldTopping.id);
+					if (newTopping) {
+						return {
+							...oldTopping,
+							quantity: (oldTopping.quantity ?? 1) + (newTopping.quantity ?? 1),
+						};
+					}
+					return oldTopping;
+				});
+				// Tambahkan topping baru yang belum ada di item
+				selectedToppings.forEach((newTopping) => {
+					if (!mergedToppings.find((t) => t.id === newTopping.id)) {
+						mergedToppings.push({ ...newTopping, quantity: newTopping.quantity ?? 1 });
+					}
+				});
 
 				updatedItems[existingItemIndex] = {
-					...updatedItems[existingItemIndex],
+					...existingItem,
 					quantity: newQuantity,
+					selectedToppings: mergedToppings,
 					totalPrice: unitPrice * newQuantity,
 				};
 
