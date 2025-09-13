@@ -83,7 +83,7 @@ export function HeroSection() {
 					{/* Right Content - Hero Image */}
 					<div className="relative">
 						<div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10">
-							<Image src="/indonesian-seblak-spicy-noodles-with-vegetables.jpg" alt="Seblak - Makanan Khas Indonesia" fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 50vw" />
+							<Image src="/indonesian-seblak-spicy-noodles-with-vegetables.webp" alt="Seblak - Makanan Khas Indonesia" fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 50vw" />
 							<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
 							{/* Floating Badge */}
