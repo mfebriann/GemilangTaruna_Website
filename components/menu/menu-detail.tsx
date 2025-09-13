@@ -196,7 +196,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 				{/* Back Button */}
 				<div className="mb-8">
 					<Link href="/menu">
-						<Button variant="ghost" className="mb-4">
+						<Button variant="ghost" className="mb-4" aria-label="Kembali ke halaman menu">
 							<ArrowLeft className="h-4 w-4 mr-2" />
 							Kembali ke Menu
 						</Button>
@@ -215,6 +215,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 								<Button
 									variant="ghost"
 									size="icon"
+									aria-label={isFavorite(menuItem.id) ? `Hapus ${menuItem.name} dari favorit` : `Tambah ${menuItem.name} ke favorit`}
 									className={`h-10 w-10 rounded-full backdrop-blur-sm transition-all duration-300 ${
 										!isMounted ? 'bg-white/20 text-white hover:bg-white/30' : isFavorite(menuItem.id) ? 'bg-red-500/90 text-white hover:bg-red-600/90' : 'bg-white/20 text-white hover:bg-white/30'
 									}`}
@@ -322,17 +323,21 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 															<Button
 																variant="outline"
 																size="icon"
+																aria-label={`Kurangi jumlah topping ${topping.name}`}
 																onClick={() => setSelectedToppings((prev) => prev.map((t) => (t.id === topping.id ? { ...t, quantity: Math.max(1, (t.quantity ?? 1) - 1) } : t)))}
 																disabled={(selected.quantity ?? 1) <= 1}
 															>
 																<Minus className="h-3 w-3" />
 															</Button>
 
-															<span className="text-sm font-semibold w-6 text-center">{selected.quantity ?? 1}</span>
+															<span className="text-sm font-semibold w-6 text-center" aria-label={`Jumlah topping ${topping.name}: ${selected.quantity ?? 1}`}>
+																{selected.quantity ?? 1}
+															</span>
 
 															<Button
 																variant="outline"
 																size="icon"
+																aria-label={`Tambah jumlah topping ${topping.name}`}
 																onClick={() => {
 																	const maxStock = currentStock;
 																	const next = (selected.quantity ?? 1) + 1;
@@ -372,11 +377,13 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 									<div className="flex items-center justify-between">
 										<span className="font-medium">Jumlah</span>
 										<div className="flex items-center space-x-3">
-											<Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={!isMounted || quantity <= 1}>
+											<Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={!isMounted || quantity <= 1} aria-label="Kurangi jumlah pesanan">
 												<Minus className="h-4 w-4" />
 											</Button>
-											<span className="text-lg font-semibold w-8 text-center">{quantity}</span>
-											<Button variant="outline" size="icon" onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))} disabled={!isMounted || quantity >= maxQuantity}>
+											<span className="text-lg font-semibold w-8 text-center" aria-label={`Jumlah pesanan: ${quantity}`}>
+												{quantity}
+											</span>
+											<Button variant="outline" size="icon" onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))} disabled={!isMounted || quantity >= maxQuantity} aria-label="Tambah jumlah pesanan">
 												<Plus className="h-4 w-4" />
 											</Button>
 										</div>
@@ -423,12 +430,12 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 
 						{/* Add to Cart Button */}
 						{isEditMode ? (
-							<Button onClick={handleEditOrder} size="lg" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={!isMounted || !menuItem.available || disableForMinTop}>
+							<Button onClick={handleEditOrder} size="lg" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={!isMounted || !menuItem.available || disableForMinTop} aria-label={`Ubah pesanan ${menuItem.name}`}>
 								<ShoppingCart className="h-5 w-5 mr-2" />
 								Ubah Pesanan
 							</Button>
 						) : (
-							<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.available || maxQuantity <= 0 || disableForMinTop}>
+							<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.available || maxQuantity <= 0 || disableForMinTop} aria-label={`Tambah ${quantity}x ${menuItem.name} ke keranjang`}>
 								<ShoppingCart className="h-5 w-5 mr-2" />
 								Tambah ke Keranjang
 							</Button>

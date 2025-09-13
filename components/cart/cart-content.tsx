@@ -153,7 +153,7 @@ export function CartContent() {
 							<p className="text-muted-foreground">Belum ada item di keranjang Anda. Yuk, pilih menu favorit!</p>
 						</div>
 						<Link href="/menu">
-							<Button size="lg">
+							<Button size="lg" aria-label="Kembali ke halaman menu">
 								<ArrowLeft className="h-4 w-4 mr-2" />
 								Lihat Menu
 							</Button>
@@ -174,7 +174,7 @@ export function CartContent() {
 						<p className="text-muted-foreground">{Array.isArray(state?.items) ? state.items.reduce((sum, item) => sum + item.quantity, 0) : 0} item dalam keranjang</p>
 					</div>
 					<Link href="/menu">
-						<Button variant="outline">
+						<Button variant="outline" aria-label="Kembali ke halaman menu">
 							<ArrowLeft className="h-4 w-4 mr-2" />
 							Lanjut Belanja
 						</Button>
@@ -190,7 +190,11 @@ export function CartContent() {
 									<CardContent className="p-4">
 										<div className="flex flex-col sm:flex-row gap-5">
 											{/* Item Image */}
-											<Link href={`/menu/${item.menuItem.id}`} className="relative w-full h-auto aspect-[4/3] sm:aspect-auto sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+											<Link
+												href={`/menu/${item.menuItem.id}`}
+												className="relative w-full h-auto aspect-[4/3] sm:aspect-auto sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0"
+												aria-label={`Lihat detail menu ${item.menuItem.name}`}
+											>
 												<Image src={item.menuItem.image || '/placeholder.svg'} alt={item.menuItem.name} fill className="object-cover" />
 											</Link>
 											{/* Item Details */}
@@ -228,7 +232,7 @@ export function CartContent() {
 																	<Edit className="h-4 w-4" />
 																</Button>
 															</Link>
-															<Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive">
+															<Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive" aria-label={`Hapus ${item.menuItem.name} dari keranjang`}>
 																<Trash2 className="h-4 w-4" />
 															</Button>
 														</div>
@@ -256,7 +260,7 @@ export function CartContent() {
 
 						{/* Clear Cart Button */}
 						<div className="pt-4">
-							<Button variant="outline" onClick={handleClearCart} className="text-destructive hover:text-destructive bg-transparent" disabled={!isMounted}>
+							<Button variant="outline" onClick={handleClearCart} className="text-destructive hover:text-destructive bg-transparent" disabled={!isMounted} aria-label="Kosongkan semua item dalam keranjang">
 								<Trash2 className="h-4 w-4 mr-2" />
 								Kosongkan Keranjang
 							</Button>
@@ -301,7 +305,7 @@ export function CartContent() {
 								</div>
 
 								{/* Checkout Button */}
-								<Button onClick={handleCheckout} size="lg" className="w-full" disabled={isCheckoutDisabled}>
+								<Button onClick={handleCheckout} size="lg" className="w-full" disabled={isCheckoutDisabled} aria-label="Lanjutkan pesanan melalui WhatsApp">
 									<MessageCircle className="h-5 w-5 mr-2" />
 									Pesan via WhatsApp
 								</Button>
