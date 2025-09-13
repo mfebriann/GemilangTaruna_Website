@@ -14,8 +14,7 @@ import { toNumericStock, useCart } from '@/contexts/cart-context';
 import { useFavorites } from '@/contexts/favorites-context';
 import { formatCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'react-hot-toast';
-import { useSearchParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export interface MenuDetailProps {
 	menuItem: MenuItem;
@@ -34,6 +33,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	const router = useRouter();
 
 	const editingItem = isEditMode ? editItem ?? state.items.find((i) => i.id === itemId) : null;
+	const baseAutoTopping = (menuItem.toppings ?? []).find((t) => t.autoSelect) || null;
 
 	useEffect(() => {
 		setIsMounted(true);
@@ -62,15 +62,38 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 			}
 			setSelectedToppings(tops);
 		}
-	}, [isEditMode, editingItem?.id, menuItem.id]);
+	}, [isEditMode, editingItem?.id, menuItem.id, searchParams, menuItem.toppings]);
+
+	useEffect(() => {
+		if (!isMounted) return;
+		if (!baseAutoTopping) return;
+
+		setSelectedToppings((prev) => {
+			const exists = prev.some((p) => p.id === baseAutoTopping.id);
+			if (exists) {
+				return prev.map((p) => (p.id === baseAutoTopping.id ? { ...p, quantity } : p));
+			}
+			return [...prev, { ...baseAutoTopping, quantity }];
+		});
+	}, [isMounted, menuItem.id]);
+
+	useEffect(() => {
+		if (!baseAutoTopping) return;
+		setSelectedToppings((prev) => prev.map((p) => (p.id === baseAutoTopping.id ? { ...p, quantity } : p)));
+	}, [quantity, baseAutoTopping]);
+
+	// Minimum toppings
+	const meetsMinToppings = () => {
+		const min = menuItem.minToppingsRequired ?? 0;
+		return selectedToppings.length >= min;
+	};
+	const disableForMinTop = !meetsMinToppings();
 
 	function getToppingStock(topping: Topping): number {
 		const base = toNumericStock(topping.stock);
 
 		if (!isMounted) return base;
-
 		if (isEditMode) return base;
-
 		if (!Number.isFinite(base)) return Infinity;
 
 		let used = 0;
@@ -89,43 +112,52 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	const totalInCart = state.items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0);
 	const totalInCartExcludingEdit = isEditMode && editingItem ? totalInCart - editingItem.quantity : totalInCart;
 	const baseMenuStock = toNumericStock(menuItem.stock);
-
 	const maxQuantity = Number.isFinite(baseMenuStock) ? Math.max(0, (baseMenuStock as number) - totalInCartExcludingEdit) : Infinity;
 
-	const calculateTotalPrice = () => {
-		const toppingsPrice = selectedToppings.reduce((sum, topping) => sum + topping.price * topping.quantity, 0);
-		return menuItem.price * quantity + toppingsPrice;
-	};
+	const selectedBase = baseAutoTopping ? selectedToppings.find((t) => t.id === baseAutoTopping.id) || null : null;
+
+	const basePricePerUnit = selectedBase ? selectedBase.price : menuItem.price;
+
+	const otherSelectedToppings = selectedToppings.filter((t) => !selectedBase || t.id !== selectedBase.id);
+	const otherToppingsSubtotal = otherSelectedToppings.reduce((sum, t) => sum + t.price * t.quantity, 0);
+
+	const uiTotalPrice = basePricePerUnit * quantity + otherToppingsSubtotal;
+	const calculateTotalPrice = () => uiTotalPrice;
 
 	const handleAddToCart = () => {
+		if (!menuItem.available) return;
+
 		if (!menuItem.available) {
-			toast.error('Menu tidak tersedia', {
-				duration: 1500,
-				position: 'top-center',
-			});
+			toast.error('Menu tidak tersedia', { duration: 1500, position: 'top-center' });
 			return;
 		}
+
 		if (quantity > maxQuantity) {
-			toast.error(`Stok tidak cukup. Sisa stok hanya ${maxQuantity}`, {
+			toast.error(`Stok tidak cukup. Sisa stok hanya ${maxQuantity}`, { duration: 1500, position: 'top-center' });
+			return;
+		}
+
+		if (!meetsMinToppings()) {
+			const min = menuItem.minToppingsRequired ?? 0;
+			toast.error(`Pilih minimal ${min} topping untuk menu ini.`, {
 				duration: 1500,
 				position: 'top-center',
 			});
 			return;
 		}
+
+		const payloadToppings = selectedToppings.map((t) => (baseAutoTopping && t.id === baseAutoTopping.id ? { ...t, quantity } : t));
 
 		dispatch({
 			type: 'ADD_ITEM',
 			payload: {
 				menuItem,
-				selectedToppings: selectedToppings.map((t) => ({ ...t, quantity: t.quantity ?? 1 })),
+				selectedToppings: payloadToppings,
 				quantity,
 			},
 		});
 
-		toast.success(`${quantity}x ${menuItem.name} ditambahkan ke keranjang!`, {
-			duration: 1500,
-			position: 'top-center',
-		});
+		toast.success(`${quantity}x ${menuItem.name} ditambahkan ke keranjang!`, { duration: 1500, position: 'top-center' });
 
 		setQuantity(1);
 		setSelectedToppings([]);
@@ -135,12 +167,14 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 		const targetId = itemId ?? editItem?.id;
 		if (!targetId) return;
 
+		const payloadToppings = selectedToppings.map((t) => (baseAutoTopping && t.id === baseAutoTopping.id ? { ...t, quantity } : t));
+
 		dispatch({
 			type: 'EDIT_ITEM',
 			payload: {
 				id: targetId,
 				menuItem,
-				selectedToppings: selectedToppings.map((t) => ({ ...t, quantity: t.quantity ?? 1 })),
+				selectedToppings: payloadToppings,
 				quantity,
 			},
 		});
@@ -193,19 +227,9 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 										toast.dismiss('favorite-toast');
 
 										if (!wasInFavorites) {
-											toast(`${menuItem.name} telah ditambahkan ke favorit`, {
-												id: 'favorite-toast',
-												duration: 1000,
-												position: 'top-center',
-												icon: '💖',
-											});
+											toast(`${menuItem.name} telah ditambahkan ke favorit`, { id: 'favorite-toast', duration: 1000, position: 'top-center', icon: '💖' });
 										} else {
-											toast(`${menuItem.name} telah dihapus dari favorit`, {
-												id: 'favorite-toast',
-												duration: 1000,
-												position: 'top-center',
-												icon: '💔',
-											});
+											toast(`${menuItem.name} telah dihapus dari favorit`, { id: 'favorite-toast', duration: 1000, position: 'top-center', icon: '💔' });
 										}
 									}}
 								>
@@ -245,7 +269,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 						<div className="space-y-4">
 							<h1 className="text-3xl lg:text-4xl font-bold">{menuItem.name}</h1>
 							<p className="text-lg text-muted-foreground">{menuItem.description}</p>
-							<div className="text-2xl font-bold text-primary">{menuItem.price === 0 ? 'Gratis' : formatCurrency(menuItem.price)}</div>
+							<div className="text-2xl font-bold text-primary">{menuItem.price === 0 ? (selectedBase ? formatCurrency(selectedBase.price) : 'Gratis') : formatCurrency(menuItem.price)}</div>
 						</div>
 
 						{/* Toppings Selection */}
@@ -259,8 +283,9 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 										const selected = selectedToppings.find((t) => t.id === topping.id);
 										const currentStock = getToppingStock(topping);
 										const isFree = topping.price === 0;
-
 										const isOutOfStock = Number.isFinite(currentStock) ? (currentStock as number) <= 0 : false;
+
+										const lockQty = !!topping.main && !!topping.autoSelect;
 
 										return (
 											<div key={topping.id} className="flex items-center justify-between">
@@ -268,34 +293,36 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 													<Checkbox
 														id={topping.id}
 														checked={!!selected}
+														disabled={isOutOfStock}
 														onCheckedChange={(checked) => {
 															const okToSelect = checked === true && (!Number.isFinite(currentStock) || (currentStock as number) > 0);
 
 															if (okToSelect) {
-																setSelectedToppings([...selectedToppings, { ...topping, quantity: 1 }]);
-															} else if (checked === false) {
-																setSelectedToppings(selectedToppings.filter((t) => t.id !== topping.id));
-															} else {
-																toast.error('Topping habis', {
-																	duration: 1200,
-																	position: 'top-center',
+																setSelectedToppings((prev) => {
+																	if (prev.some((p) => p.id === topping.id)) return prev;
+																	const qtyForThis = baseAutoTopping && topping.id === baseAutoTopping.id ? quantity : 1;
+																	return [...prev, { ...topping, quantity: qtyForThis }];
 																});
+															} else if (checked === false) {
+																setSelectedToppings((prev) => prev.filter((t) => t.id !== topping.id));
+															} else {
+																toast.error('Topping habis', { duration: 1200, position: 'top-center' });
 															}
 														}}
-														disabled={isOutOfStock}
 													/>
 
 													<label htmlFor={topping.id} className={`text-sm font-medium cursor-pointer ${isOutOfStock ? 'text-destructive' : ''}`}>
-														{topping.name} {isOutOfStock && '(Habis)'}
+														{topping.name}
+														{topping.main && <span className="ml-2 text-xs text-primary">(Utama)</span>}
+														{isOutOfStock && ' (Habis)'}
 													</label>
 
-													{/* Kontrol quantity hanya muncul bila TIDAK gratis */}
-													{!!selected && !isFree && (
+													{!!selected && !isFree && !lockQty && (
 														<div className="flex items-center space-x-1 ml-2">
 															<Button
 																variant="outline"
 																size="icon"
-																onClick={() => setSelectedToppings(selectedToppings.map((t) => (t.id === topping.id ? { ...t, quantity: Math.max(1, (t.quantity ?? 1) - 1) } : t)))}
+																onClick={() => setSelectedToppings((prev) => prev.map((t) => (t.id === topping.id ? { ...t, quantity: Math.max(1, (t.quantity ?? 1) - 1) } : t)))}
 																disabled={(selected.quantity ?? 1) <= 1}
 															>
 																<Minus className="h-3 w-3" />
@@ -309,8 +336,8 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 																onClick={() => {
 																	const maxStock = currentStock;
 																	const next = (selected.quantity ?? 1) + 1;
-																	setSelectedToppings(
-																		selectedToppings.map((t) =>
+																	setSelectedToppings((prev) =>
+																		prev.map((t) =>
 																			t.id === topping.id
 																				? {
 																						...t,
@@ -339,7 +366,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 						)}
 
 						{/* Quantity Selector */}
-						{menuItem.price > 0 && (
+						{menuItem.price > 0 || selectedBase ? (
 							<Card>
 								<CardContent className="p-4">
 									<div className="flex items-center justify-between">
@@ -361,21 +388,21 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 									)}
 								</CardContent>
 							</Card>
-						)}
+						) : null}
 
 						{/* Price Summary */}
 						<Card className="bg-muted/50">
 							<CardContent className="p-4 space-y-3">
 								<div className="flex justify-between text-sm">
 									<span>Harga dasar ({quantity}x)</span>
-									<span>{menuItem.price === 0 ? 'Gratis' : formatCurrency(menuItem.price * quantity)}</span>
+									<span>{basePricePerUnit === 0 ? 'Gratis' : formatCurrency(basePricePerUnit * quantity)}</span>
 								</div>
-								{selectedToppings.length > 0 && (
+								{otherSelectedToppings.length > 0 && (
 									<>
 										<Separator />
 										<div className="space-y-1">
 											<div className="text-sm font-medium">Toppings:</div>
-											{selectedToppings.map((topping) => (
+											{otherSelectedToppings.map((topping) => (
 												<div key={topping.id} className="flex justify-between text-sm">
 													<span>
 														• {topping.name} ({topping.quantity}x)
@@ -396,18 +423,21 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 
 						{/* Add to Cart Button */}
 						{isEditMode ? (
-							<Button onClick={handleEditOrder} size="lg" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={!isMounted || !menuItem.available}>
+							<Button onClick={handleEditOrder} size="lg" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={!isMounted || !menuItem.available || disableForMinTop}>
 								<ShoppingCart className="h-5 w-5 mr-2" />
 								Ubah Pesanan
 							</Button>
 						) : (
-							<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.available || maxQuantity <= 0}>
+							<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.available || maxQuantity <= 0 || disableForMinTop}>
 								<ShoppingCart className="h-5 w-5 mr-2" />
 								Tambah ke Keranjang
 							</Button>
 						)}
 
-						{maxQuantity <= 0 && <p className="text-sm text-destructive text-center mt-2">Stok habis, tidak bisa menambah ke keranjang.</p>}
+						{!meetsMinToppings() && <p className="text-xs text-destructive text-center">Pilih minimal {menuItem.minToppingsRequired ?? 0} topping untuk melanjutkan.</p>}
+
+						{maxQuantity <= 0 && <p className="text-sm text-destructive text-center">Stok habis, tidak bisa menambah ke keranjang.</p>}
+
 						{!menuItem.available && <p className="text-sm text-muted-foreground text-center">Maaf, menu ini sedang tidak tersedia. Silakan pilih menu lainnya.</p>}
 					</div>
 				</div>

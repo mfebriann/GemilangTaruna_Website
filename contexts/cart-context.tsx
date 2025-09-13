@@ -22,6 +22,7 @@ export interface MenuItem {
 	bestSeller: boolean;
 	stock: StockInput;
 	toppings?: Topping[];
+	minToppingsRequired?: number;
 }
 
 export interface Topping {
@@ -30,6 +31,8 @@ export interface Topping {
 	price: number;
 	stock: StockInput;
 	quantity?: number;
+	autoSelect?: boolean;
+	main?: boolean;
 }
 
 export interface CartItem {
