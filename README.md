@@ -34,7 +34,6 @@ A modern web application built with Next.js 14 and Tailwind CSS to showcase a lo
 
 - [Next.js 14](https://nextjs.org/) - The React Framework
 - [Tailwind CSS](https://tailwindcss.com/) - For styling
-- [Shadcn/ui](https://ui.shadcn.com/) - UI Components
 - [TypeScript](https://www.typescriptlang.org/) - For type safety
 - [Lucide Icons](https://lucide.dev/) - Beautiful icons
 - [Framer Motion](https://www.framer.com/motion/) - Smooth animations
@@ -110,7 +109,6 @@ A modern web application built with Next.js 14 and Tailwind CSS to showcase a lo
 - **SEO Optimized**: Built with Next.js App Router
 - **Type Safety**: Full TypeScript implementation
 - **Performance**: Optimized image loading and animations
-- **Accessibility**: ARIA compliant components from shadcn/ui
 - **Mobile First**: Optimized for all screen sizes
 
 ## 📝 Notes
@@ -136,7 +134,6 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 🙏 Acknowledgments
 
 - Thanks to the Next.js team for the amazing framework
-- Shadcn for the beautiful UI components
 - The React community for invaluable resources
 - My parents for inspiring this project
 
