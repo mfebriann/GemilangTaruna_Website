@@ -19,7 +19,7 @@ export interface Topping {
 	id: string;
 	name: string;
 	price: number;
-	stock: number;
+	stock: number | string;
 	quantity?: number;
 }
 
@@ -58,63 +58,67 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 	switch (action.type) {
 		case 'ADD_ITEM': {
 			const { menuItem, selectedToppings, quantity = 1 } = action.payload;
-			const toppingsPrice = selectedToppings.reduce((sum, topping) => sum + topping.price, 0);
-			const unitPrice = menuItem.price + toppingsPrice;
 
-			// Fungsi membandingkan array toppings berdasarkan id tanpa memperhatikan urutan
+			// Helper: pastikan setiap topping punya quantity minimal 1
+			const withQty = (tops: Topping[]) => tops.map((t) => ({ ...t, quantity: t.quantity ?? 1 }));
+
+			const topsA = withQty(selectedToppings);
+
+			// Bandingkan daftar topping berdasar ID saja (tanpa urutan)
 			const isSameToppings = (a: Topping[], b: Topping[]) => {
 				if (a.length !== b.length) return false;
 				const aSet = new Set(a.map((t) => t.id));
 				const bSet = new Set(b.map((t) => t.id));
 				if (aSet.size !== bSet.size) return false;
-				for (const id of aSet) {
-					if (!bSet.has(id)) return false;
-				}
+				for (const id of aSet) if (!bSet.has(id)) return false;
 				return true;
 			};
 
-			const existingItemIndex = items.findIndex((item) => item.menuItem.id === menuItem.id && isSameToppings(item.selectedToppings, selectedToppings));
+			const existingItemIndex = items.findIndex((item) => item.menuItem.id === menuItem.id && isSameToppings(item.selectedToppings, topsA));
 
-			// Hitung sisa stock yang sudah ada di cart
-			// Hitung total quantity yang sudah ada di cart untuk item yang sama
+			// Hitung stok tersisa untuk menu (bukan topping)
 			const totalQtyInCart = items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0);
 
-			// Hitung sisa stok yang tersedia
 			const availableStock = menuItem.stock - totalQtyInCart;
-
 			if (quantity > availableStock) {
-				// Tidak bisa tambah melebihi stok
+				// Melebihi stok menu, abaikan (atau bisa return state + toast di caller)
 				return state;
 			}
+
+			// Helper subtotal
+			const toppingsSubtotal = (tops: Topping[]) => tops.reduce((sum, t) => sum + (t.price || 0) * (t.quantity ?? 1), 0);
 
 			if (existingItemIndex > -1) {
 				const updatedItems = [...items];
 				const existingItem = updatedItems[existingItemIndex];
+
+				// Gabungkan quantity menu
 				const newQuantity = existingItem.quantity + quantity;
 
-				// Gabungkan quantity topping
-				const mergedToppings = existingItem.selectedToppings.map((oldTopping) => {
-					const newTopping = selectedToppings.find((t) => t.id === oldTopping.id);
-					if (newTopping) {
-						return {
-							...oldTopping,
-							quantity: (oldTopping.quantity ?? 1) + (newTopping.quantity ?? 1),
-						};
-					}
-					return oldTopping;
+				// Merge topping: jumlahkan quantity per ID
+				const mergedMap = new Map<string, Topping>();
+
+				// Masukkan topping lama
+				existingItem.selectedToppings.forEach((t) => {
+					mergedMap.set(t.id, { ...t, quantity: t.quantity ?? 1 });
 				});
-				// Tambahkan topping baru yang belum ada di item
-				selectedToppings.forEach((newTopping) => {
-					if (!mergedToppings.find((t) => t.id === newTopping.id)) {
-						mergedToppings.push({ ...newTopping, quantity: newTopping.quantity ?? 1 });
-					}
+				// Tambahkan topping baru (jumlahkan jika sudah ada)
+				topsA.forEach((t) => {
+					const prev = mergedMap.get(t.id);
+					const q = (t.quantity ?? 1) + (prev?.quantity ?? 0);
+					mergedMap.set(t.id, { ...t, quantity: q });
 				});
+
+				const mergedToppings = Array.from(mergedMap.values());
+
+				// Recompute totalPrice dg rumus yang benar
+				const totalPrice = menuItem.price * newQuantity + toppingsSubtotal(mergedToppings);
 
 				updatedItems[existingItemIndex] = {
 					...existingItem,
 					quantity: newQuantity,
 					selectedToppings: mergedToppings,
-					totalPrice: unitPrice * newQuantity,
+					totalPrice,
 				};
 
 				return {
@@ -123,12 +127,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 				};
 			}
 
+			// Item baru
+			const totalPrice = menuItem.price * quantity + toppingsSubtotal(topsA);
+
 			const newItem: CartItem = {
 				id: `${menuItem.id}-${Date.now()}`,
 				menuItem: { ...menuItem },
-				quantity: quantity,
-				selectedToppings,
-				totalPrice: unitPrice * quantity,
+				quantity,
+				selectedToppings: topsA,
+				totalPrice,
 			};
 
 			const newItems = [...items, newItem];
@@ -141,9 +148,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 		case 'REMOVE_ITEM': {
 			const removedItem = items.find((item) => item.id === action.payload);
 			const newItems = items.filter((item) => item.id !== action.payload);
-
-			// Tidak perlu memodifikasi stock ketika menghapus item
-			// Stock dikelola oleh menu-data, bukan oleh cart
 
 			return {
 				items: newItems,
