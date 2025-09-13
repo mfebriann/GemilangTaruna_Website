@@ -35,27 +35,27 @@ export function AboutContent() {
 								Cerita Kami
 							</Badge>
 							<h2 className="text-3xl lg:text-4xl font-bold text-balance">
-								Warung Keluarga dengan <span className="text-primary">Cita Rasa Autentik</span>
+								Warun Jajan Sederhana, <span className="text-primary">Penuh Rasa</span>
 							</h2>
 						</div>
 
 						<div className="space-y-4 text-muted-foreground leading-relaxed">
 							<p>
-								{aboutUs.name} didirikan pada tahun {aboutUs.since} dengan misi sederhana namun bermakna: menghadirkan jajanan dan minuman khas Indonesia yang lezat dan mudah dinikmati setiap hari. Kami memulai perjalanan ini dari dapur
-								rumah dengan resep-resep tradisional yang telah diwariskan dari generasi ke generasi, menjaga cita rasa autentik setiap menu.
+								{aboutUs.name} berdiri sejak tahun {aboutUs.since} dengan tujuan sederhana: menghadirkan jajanan warung yang enak, terjangkau, dan mudah dinikmati setiap hari. Usaha ini dimulai dari dapur rumah dengan resep-resep rumahan
+								yang sederhana namun penuh rasa.
 							</p>
 
 							<p>
-								Setiap jajanan yang kami sajikan dibuat dengan penuh perhatian, menggunakan bahan-bahan segar dan berkualitas. Dari Seblak pedas yang menggugah selera, Ayam Geprek gurih, hingga Pisang Keju manis yang nikmat, semua menu
-								disiapkan secara fresh setiap hari. Minuman segar seperti Kopi hangat, Pop Ice, dan Es Teh manis melengkapi pengalaman bersantap Anda dengan kesegaran yang maksimal.
+								Kami menyajikan beragam pilihan jajanan yang dibuat fresh setiap hari. Dari Seblak pedas yang menggugah selera, Ayam Geprek gurih yang jadi favorit, hingga Pisang Keju manis yang pas untuk camilan. Minuman sederhana seperti
+								Kopi, Pop Ice, dan Es Teh manis pun siap menemani santapan Anda.
 							</p>
 
 							<p>
-								Kami bangga menjadi bagian dari komunitas lokal dan berkomitmen untuk selalu memberikan pelayanan yang ramah dan cepat. {aboutUs.name} bukan hanya tempat makan, tetapi juga tempat berkumpul dan berbagi cerita sambil
-								menikmati jajanan dan minuman favorit Anda.
+								{aboutUs.name} adalah warung jajanan sederhana, sehingga tidak menyediakan tempat makan di lokasi. Meski begitu, kami berkomitmen memberikan pelayanan yang ramah, cepat, dan praktis agar pelanggan bisa membawa pulang jajanan
+								favorit dan menikmatinya di rumah, kantor, atau di mana saja.
 							</p>
 
-							<p>Terima kasih telah mempercayai kami sebagai pilihan jajanan favorit Anda. Mari bersama-sama menikmati kelezatan jajanan Indonesia yang autentik dan tetap lestari.</p>
+							<p>Terima kasih telah mempercayai kami sebagai pilihan jajanan sederhana Anda. Mari terus dukung dan nikmati jajanan warung yang merakyat, penuh rasa, dan selalu fresh setiap hari.</p>
 						</div>
 
 						{/* Key Info */}
