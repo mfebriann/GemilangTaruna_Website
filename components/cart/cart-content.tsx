@@ -18,6 +18,7 @@ export function CartContent() {
 	function buildEditUrl(item: CartItem) {
 		const params = new URLSearchParams();
 		params.set('edit', '1');
+		params.set('itemId', item.id);
 		params.set('quantity', String(item.quantity));
 		item.selectedToppings.forEach((topping: Topping) => {
 			params.set(`topping_${topping.id}`, String(topping.quantity ?? 1));
