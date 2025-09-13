@@ -28,14 +28,18 @@ export function CartContent() {
 	const [isMounted, setIsMounted] = useState(false);
 	const [openNotes, setOpenNotes] = useState<{ [key: string]: boolean }>({});
 	const [isCheckoutDisabled, setIsCheckoutDisabled] = useState<boolean>(false);
+	const [customerName, setCustomerName] = useState<string>('');
 
 	useEffect(() => {
 		setIsMounted(true);
+		const savedName = localStorage.getItem('warung-customer-name');
+		if (savedName) setCustomerName(savedName);
 	}, []);
 
-	if (!isMounted) {
-		return null; // atau loading skeleton
-	}
+	useEffect(() => {
+		if (!isMounted) return;
+		localStorage.setItem('warung-customer-name', customerName);
+	}, [customerName, isMounted]);
 
 	const handleRemoveItem = (itemId: string) => {
 		dispatch({
@@ -67,9 +71,23 @@ export function CartContent() {
 			return;
 		}
 
+		toast.dismiss('customer-name');
+
+		if (!customerName.trim()) {
+			toast('Mohon isi "Pesanan atas nama" dulu ya', {
+				id: 'customer-name',
+				duration: 2000,
+				position: 'top-center',
+				icon: '🙏',
+			});
+			return;
+		}
+
 		setIsCheckoutDisabled(true);
 
-		let message = '*PESANAN DARI WEBSITE*\n\n';
+		let message = '*PESANAN DARI WEBSITE*\n';
+		message += `*Pesanana atas nama:* ${customerName.trim()}\n\n`;
+
 		state.items.forEach((item, index) => {
 			message += `${index + 1}. ${item.menuItem.name}\n`;
 			message += `   Jumlah: ${item.quantity}x\n`;
@@ -85,6 +103,7 @@ export function CartContent() {
 
 		message += `*TOTAL: ${formatCurrency(state.total)}*\n\n`;
 		message += 'Mohon konfirmasi pesanan ini. Terima kasih!';
+
 		const whatsappUrl = `https://wa.me/${aboutUs.whatsapp}?text=${encodeURIComponent(message)}`;
 		window.open(whatsappUrl, '_blank');
 
@@ -99,6 +118,7 @@ export function CartContent() {
 
 		setTimeout(() => {
 			localStorage.removeItem('warung-cart');
+			// NOTE: sengaja tidak menghapus 'warung-customer-name' agar tetap autofill di pesanan berikutnya
 			dispatch({ type: 'CLEAR_CART' });
 			setIsCheckoutDisabled(false);
 		}, duration + 500);
@@ -273,6 +293,14 @@ export function CartContent() {
 								<div className="flex justify-between text-lg font-bold">
 									<span>Total</span>
 									<span className="text-primary">{formatCurrency(state.total)}</span>
+								</div>
+
+								<div className="space-y-1">
+									<label htmlFor="customer-name" className="text-sm font-medium">
+										Pesanan atas nama
+									</label>
+									<input id="customer-name" type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Contoh: Budi" className="w-full border rounded-md p-2 text-sm" />
+									<p className="text-xs text-muted-foreground">Nama ini akan ikut dikirim di WhatsApp.</p>
 								</div>
 
 								{/* Checkout Button */}
