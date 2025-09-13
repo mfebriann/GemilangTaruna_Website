@@ -23,7 +23,7 @@ export const MenuCard: React.FC<{ items: MenuItem[]; className?: string }> = ({ 
 		<div className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 ${className}`}>
 			<Toaster />
 			{items.map((item: MenuItem) => (
-				<Card key={item.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden pt-0">
+				<Card key={item.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden pt-0 h-full flex flex-col">
 					<div className="relative aspect-[4/3] overflow-hidden">
 						<div className="relative w-full h-full">
 							<Image
@@ -118,18 +118,21 @@ export const MenuCard: React.FC<{ items: MenuItem[]; className?: string }> = ({ 
 						</div>
 					</div>
 
-					<CardContent className="p-4">
-						<div className="space-y-3">
-							<p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">{item.description}</p>
+					<CardContent className="p-4 flex flex-col flex-1">
+						<div className="flex flex-col h-full">
+							{/* Bagian atas */}
+							<div className="space-y-3">
+								<p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">{item.description}</p>
 
-							{/* Toppings Info */}
-							{item.toppings && item.toppings.length > 0 && (
-								<div className="text-xs text-muted-foreground">
-									<span className="font-medium">Toppings tersedia:</span> {item.toppings.length} pilihan
-								</div>
-							)}
+								{item.toppings && item.toppings.length > 0 && (
+									<div className="text-xs text-muted-foreground">
+										<span className="font-medium">Toppings tersedia:</span> {item.toppings.length} pilihan
+									</div>
+								)}
+							</div>
 
-							<div className="flex items-center justify-between pt-2">
+							{/* Bagian bawah */}
+							<div className="flex items-center justify-between pt-2 mt-auto">
 								<div className="flex items-center space-x-2">
 									{item.available ? (
 										<Badge variant="outline" className="text-green-600 border-green-600">
