@@ -1,4 +1,5 @@
 import type { MenuItem } from '@/contexts/cart-context';
+import { formatCurrency } from '@/lib/utils';
 
 export const menuData: MenuItem[] = [
 	// Makanan
@@ -21,16 +22,16 @@ export const menuData: MenuItem[] = [
 	{
 		id: 'ayam-geprek',
 		name: 'Ayam Geprek',
-		price: 18000,
+		price: 8000,
 		category: 'makanan',
 		image: '/indonesian-ayam-geprek-fried-chicken-with-sambal.jpg',
 		description: 'Ayam goreng crispy yang digeprek dengan sambal pedas dan nasi hangat.',
 		available: true,
 		bestSeller: true,
-		stock: 8,
+		stock: 20,
 		toppings: [
-			{ id: 'ayam-geprek-sosis', name: 'Sosis', price: 3000, stock: 8 },
-			{ id: 'ayam-geprek-extra-sambal', name: 'Extra Sambal', price: 2000, stock: 8 },
+			{ id: 'ayam-geprek-nasi', name: 'Nasi', price: 2000, stock: 'Infinite' },
+			{ id: 'ayam-geprek-sambal-merah', name: 'Sambal Merah', price: 0, stock: 'Infinite' },
 		],
 	},
 	{
@@ -145,3 +146,6 @@ export const getCheapestItems = () => {
 export const getMenuItemById = (id: string) => {
 	return menuData.find((item) => item.id === id);
 };
+
+// Helper untuk menampilkan harga menu: 0 => "Gratis"
+export const formatMenuPrice = (price: number) => (price === 0 ? 'Gratis' : formatCurrency(price));
