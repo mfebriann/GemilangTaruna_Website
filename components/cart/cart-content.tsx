@@ -53,7 +53,6 @@ export function CartContent() {
 			icon: '🗑️',
 			iconTheme: { primary: '#000', secondary: '#fff' },
 			ariaProps: { role: 'status', 'aria-live': 'polite' },
-			removeDelay: 1000,
 			toasterId: 'default',
 		});
 	};
@@ -66,7 +65,6 @@ export function CartContent() {
 				icon: '🛒',
 				iconTheme: { primary: '#000', secondary: '#fff' },
 				ariaProps: { role: 'status', 'aria-live': 'polite' },
-				removeDelay: 1000,
 				toasterId: 'default',
 			});
 			return;
@@ -113,7 +111,6 @@ export function CartContent() {
 			duration,
 			position: 'top-center',
 			ariaProps: { role: 'status', 'aria-live': 'polite' },
-			removeDelay: 1000,
 			toasterId: 'default',
 		});
 
@@ -133,7 +130,6 @@ export function CartContent() {
 			icon: '🧹',
 			iconTheme: { primary: '#000', secondary: '#fff' },
 			ariaProps: { role: 'status', 'aria-live': 'polite' },
-			removeDelay: 1000,
 			toasterId: 'default',
 		});
 	};
