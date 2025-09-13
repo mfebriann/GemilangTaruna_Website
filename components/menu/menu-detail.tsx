@@ -10,11 +10,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Star, Plus, Minus, ShoppingCart, Clock, Heart } from 'lucide-react';
 import type { CartItem, MenuItem, Topping } from '@/contexts/cart-context';
-import { useCart } from '@/contexts/cart-context';
+import { toNumericStock, useCart } from '@/contexts/cart-context';
 import { useFavorites } from '@/contexts/favorites-context';
 import { formatCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'react-hot-toast';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export interface MenuDetailProps {
 	menuItem: MenuItem;
@@ -28,29 +29,50 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	const { isFavorite, toggleFavorite } = useFavorites();
 	const searchParams = useSearchParams();
 	const isEditMode = searchParams.get('edit') === '1';
+	const itemId = searchParams.get('itemId') || undefined;
 	const [quantity, setQuantity] = useState(isEditMode && editItem ? editItem.quantity : 1);
+	const router = useRouter();
+
+	const editingItem = isEditMode ? editItem ?? state.items.find((i) => i.id === itemId) : null;
 
 	useEffect(() => {
 		setIsMounted(true);
 	}, []);
 
-	// Helper: get topping stock from cart
-	const isInfiniteStock = (s: unknown) => (typeof s === 'string' && s.toLowerCase() === 'infinite') || s === 'Banyak';
-	const toNumericStock = (s: unknown) => (isInfiniteStock(s) ? Infinity : Number(s));
+	useEffect(() => {
+		if (!isEditMode) return;
+
+		if (editingItem) {
+			setQuantity(editingItem.quantity);
+			setSelectedToppings((editingItem.selectedToppings ?? []).map((t) => ({ ...t, quantity: t.quantity ?? 1 })));
+			return;
+		}
+
+		const q = Number(searchParams.get('quantity') || '1');
+		setQuantity(Math.max(1, isNaN(q) ? 1 : q));
+
+		if (menuItem.toppings?.length) {
+			const tops: Array<Topping & { quantity: number }> = [];
+			for (const t of menuItem.toppings) {
+				const param = searchParams.get(`topping_${t.id}`);
+				if (param) {
+					const qty = Math.max(1, Number(param) || 1);
+					tops.push({ ...t, quantity: qty });
+				}
+			}
+			setSelectedToppings(tops);
+		}
+	}, [isEditMode, editingItem?.id, menuItem.id]);
 
 	function getToppingStock(topping: Topping): number {
 		const base = toNumericStock(topping.stock);
 
-		// Hindari baca state cart saat SSR; tetap kembalikan base (boleh Infinity)
 		if (!isMounted) return base;
 
-		// Saat edit, pakai stok original
 		if (isEditMode) return base;
 
-		// Jika stok tak terbatas, langsung kembalikan Infinity
 		if (!Number.isFinite(base)) return Infinity;
 
-		// Hitung sudah dipakai di cart utk menu yg sama
 		let used = 0;
 		state.items.forEach((item) => {
 			if (item.menuItem.id === menuItem.id) {
@@ -65,21 +87,10 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	}
 
 	const totalInCart = state.items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0);
-	const totalInCartExcludingEdit = isEditMode && editItem ? totalInCart - editItem.quantity : totalInCart;
-	const maxQuantity = isEditMode ? menuItem.stock : menuItem.stock - totalInCartExcludingEdit;
+	const totalInCartExcludingEdit = isEditMode && editingItem ? totalInCart - editingItem.quantity : totalInCart;
+	const baseMenuStock = toNumericStock(menuItem.stock);
 
-	const handleToppingChange = (topping: Topping, checked: boolean) => {
-		const currentStock = getToppingStock(topping);
-		if (checked && currentStock > 0) {
-			setSelectedToppings([...selectedToppings, { ...topping, quantity: 1 }]);
-		} else {
-			setSelectedToppings(selectedToppings.filter((t) => t.id !== topping.id));
-		}
-	};
-
-	const handleToppingQuantity = (toppingId: string, newQty: number, maxStock: number) => {
-		setSelectedToppings(selectedToppings.map((t) => (t.id === toppingId ? { ...t, quantity: Math.max(1, Math.min(newQty, maxStock)) } : t)));
-	};
+	const maxQuantity = Number.isFinite(baseMenuStock) ? Math.max(0, (baseMenuStock as number) - totalInCartExcludingEdit) : Infinity;
 
 	const calculateTotalPrice = () => {
 		const toppingsPrice = selectedToppings.reduce((sum, topping) => sum + topping.price * topping.quantity, 0);
@@ -121,23 +132,28 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	};
 
 	const handleEditOrder = () => {
-		const existingItem = state.items.find((item) => item.menuItem.id === menuItem.id);
-		if (!existingItem) return;
+		const targetId = itemId ?? editItem?.id;
+		if (!targetId) return;
 
 		dispatch({
 			type: 'EDIT_ITEM',
 			payload: {
-				id: existingItem.id,
+				id: targetId,
 				menuItem,
 				selectedToppings: selectedToppings.map((t) => ({ ...t, quantity: t.quantity ?? 1 })),
 				quantity,
 			},
 		});
 
-		toast.success(`${menuItem.name} berhasil diubah!`, {
-			duration: 1500,
+		const duration = 1000;
+		toast.success(`Pesananan ${menuItem.name} berhasil diubah!`, {
+			duration,
 			position: 'top-center',
 		});
+
+		setTimeout(() => {
+			router.push('/cart');
+		}, duration + 500);
 	};
 
 	return (
@@ -244,7 +260,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 										const currentStock = getToppingStock(topping);
 										const isFree = topping.price === 0;
 
-										// Disable hanya jika stok finite dan habis
 										const isOutOfStock = Number.isFinite(currentStock) ? (currentStock as number) <= 0 : false;
 
 										return (
@@ -257,12 +272,10 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 															const okToSelect = checked === true && (!Number.isFinite(currentStock) || (currentStock as number) > 0);
 
 															if (okToSelect) {
-																// Untuk topping gratis, quantity fix = 1
 																setSelectedToppings([...selectedToppings, { ...topping, quantity: 1 }]);
 															} else if (checked === false) {
 																setSelectedToppings(selectedToppings.filter((t) => t.id !== topping.id));
 															} else {
-																// stok habis (finite <= 0)
 																toast.error('Topping habis', {
 																	duration: 1200,
 																	position: 'top-center',
@@ -294,7 +307,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 																variant="outline"
 																size="icon"
 																onClick={() => {
-																	const maxStock = currentStock; // bisa Infinity
+																	const maxStock = currentStock;
 																	const next = (selected.quantity ?? 1) + 1;
 																	setSelectedToppings(
 																		selectedToppings.map((t) =>
@@ -343,7 +356,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 									</div>
 									{isMounted && (
 										<div className="mt-2 text-sm text-muted-foreground">
-											Sisa stok: <span className="font-bold text-primary">{maxQuantity}</span>
+											Sisa stok: <span className="font-bold text-primary">{Number.isFinite(maxQuantity) ? Math.max(0, (maxQuantity as number) - quantity) : 'Banyak'}</span>
 										</div>
 									)}
 								</CardContent>
