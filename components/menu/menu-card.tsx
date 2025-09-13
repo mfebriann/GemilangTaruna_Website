@@ -132,7 +132,7 @@ export const MenuCard: React.FC<{ items: MenuItem[]; className?: string }> = ({ 
 							</div>
 
 							{/* Bagian bawah */}
-							<div className="flex items-center justify-between pt-2 mt-auto">
+							<div className="flex items-center justify-between pt-2 mt-5">
 								<div className="flex items-center space-x-2">
 									{item.available ? (
 										<Badge variant="outline" className="text-green-600 border-green-600">
