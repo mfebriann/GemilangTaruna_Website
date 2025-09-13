@@ -41,3 +41,30 @@ export const handleWhatsAppOrder = () => {
 	const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 	window.open(whatsappUrl, '_blank');
 };
+
+// To get current time in Jakarta timezone
+export function getJakartaNow() {
+	const parts = new Intl.DateTimeFormat('en-GB', {
+		timeZone: 'Asia/Jakarta',
+		hour12: false,
+		weekday: 'short',
+		hour: '2-digit',
+		minute: '2-digit',
+	}).formatToParts(new Date());
+
+	const map: Record<string, string> = {};
+	parts.forEach((p) => (map[p.type] = p.value));
+	const weekday = map.weekday;
+	const hour = parseInt(map.hour, 10);
+	const minute = parseInt(map.minute, 10);
+	return { weekday, hour, minute };
+}
+
+export function isMonToSat(weekday: string) {
+	return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].includes(weekday);
+}
+
+export const storeHours = {
+	open: 9,
+	close: 20,
+};
