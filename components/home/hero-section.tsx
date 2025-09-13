@@ -4,9 +4,38 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Star, Clock, MapPin } from 'lucide-react';
-import { aboutUs, handleWhatsAppOrder } from '@/lib/utils';
+import { aboutUs, getJakartaNow, handleWhatsAppOrder, isMonToSat, storeHours } from '@/lib/utils';
+import { useEffect, useState } from 'react';
+import { Badge } from '../ui/badge';
 
 export function HeroSection() {
+	const [isShopOpen, setIsShopOpen] = useState<boolean>(false);
+
+	useEffect(() => {
+		const compute = () => {
+			const { weekday, hour } = getJakartaNow();
+			const openToday = isMonToSat(weekday);
+			const openByHour = hour >= storeHours.open && hour < storeHours.close;
+			setIsShopOpen(openToday && openByHour);
+		};
+
+		compute();
+
+		const now = new Date();
+		const msToNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+
+		let intervalId: number | null = null;
+		const timeoutId = window.setTimeout(() => {
+			compute();
+			intervalId = window.setInterval(compute, 60_000); // cek tiap menit
+		}, msToNextMinute);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+			if (intervalId !== null) window.clearInterval(intervalId);
+		};
+	}, []);
+
 	return (
 		<section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 py-16 lg:py-24">
 			<div className="container mx-auto px-4">
@@ -17,6 +46,7 @@ export function HeroSection() {
 							<div className="flex items-center space-x-2 text-sm text-primary font-medium">
 								<Star className="h-4 w-4 fill-current" />
 								<span>Warung Jajanan Sejak {aboutUs.since}</span>
+								<Badge className={`ml-2 text-sm font-semibold text-primary-foreground ${isShopOpen ? 'bg-primary animate-slow-blink' : 'bg-red-600'}`}>{isShopOpen ? 'Buka' : 'Tutup'}</Badge>
 							</div>
 							<h1 className="text-4xl lg:text-6xl font-bold text-balance leading-tight">
 								Dari Warung <span className="text-primary">Sederhana.</span> Untuk Semua
@@ -53,7 +83,7 @@ export function HeroSection() {
 					{/* Right Content - Hero Image */}
 					<div className="relative">
 						<div className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10">
-							<Image src="/indonesian-seblak-spicy-noodles-with-vegetables.jpg" alt="Seblak - Makanan Khas Indonesia" fill className="object-cover" priority />
+							<Image src="/indonesian-seblak-spicy-noodles-with-vegetables.jpg" alt="Seblak - Makanan Khas Indonesia" fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 50vw" />
 							<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
 							{/* Floating Badge */}
