@@ -35,13 +35,22 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	}, []);
 
 	// Helper: get topping stock from cart
+	const isInfiniteStock = (s: unknown) => (typeof s === 'string' && s.toLowerCase() === 'infinite') || s === 'Banyak';
+	const toNumericStock = (s: unknown) => (isInfiniteStock(s) ? Infinity : Number(s));
+
 	function getToppingStock(topping: Topping): number {
-		if (!isMounted) return topping.stock;
+		const base = toNumericStock(topping.stock);
 
-		if (isEditMode) {
-			return topping.stock;
-		}
+		// Hindari baca state cart saat SSR; tetap kembalikan base (boleh Infinity)
+		if (!isMounted) return base;
 
+		// Saat edit, pakai stok original
+		if (isEditMode) return base;
+
+		// Jika stok tak terbatas, langsung kembalikan Infinity
+		if (!Number.isFinite(base)) return Infinity;
+
+		// Hitung sudah dipakai di cart utk menu yg sama
 		let used = 0;
 		state.items.forEach((item) => {
 			if (item.menuItem.id === menuItem.id) {
@@ -52,7 +61,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 				});
 			}
 		});
-		return topping.stock - used;
+		return Math.max(0, (base as number) - used);
 	}
 
 	const totalInCart = state.items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0);
@@ -156,25 +165,35 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 								<Button
 									variant="ghost"
 									size="icon"
-									className={`h-10 w-10 rounded-full backdrop-blur-sm transition-all duration-300 ${isFavorite(menuItem.id) ? 'bg-red-500/90 text-white hover:bg-red-600/90' : 'bg-white/20 text-white hover:bg-white/30'}`}
+									className={`h-10 w-10 rounded-full backdrop-blur-sm transition-all duration-300 ${
+										!isMounted ? 'bg-white/20 text-white hover:bg-white/30' : isFavorite(menuItem.id) ? 'bg-red-500/90 text-white hover:bg-red-600/90' : 'bg-white/20 text-white hover:bg-white/30'
+									}`}
 									onClick={() => {
+										if (!isMounted) return;
+
+										const wasInFavorites = isFavorite(menuItem.id);
 										toggleFavorite(menuItem);
-										setTimeout(() => {
-											if (isFavorite(menuItem.id)) {
-												toast.success(`${menuItem.name} ditambahkan ke favorit!`, {
-													duration: 1500,
-													position: 'top-center',
-												});
-											} else {
-												toast.error(`${menuItem.name} dihapus dari favorit`, {
-													duration: 1500,
-													position: 'top-center',
-												});
-											}
-										}, 100);
+
+										toast.dismiss('favorite-toast');
+
+										if (!wasInFavorites) {
+											toast(`${menuItem.name} telah ditambahkan ke favorit`, {
+												id: 'favorite-toast',
+												duration: 1000,
+												position: 'top-center',
+												icon: '💖',
+											});
+										} else {
+											toast(`${menuItem.name} telah dihapus dari favorit`, {
+												id: 'favorite-toast',
+												duration: 1000,
+												position: 'top-center',
+												icon: '💔',
+											});
+										}
 									}}
 								>
-									<Heart className={`h-5 w-5 transition-all duration-300 ${isFavorite(menuItem.id) ? 'fill-current' : ''}`} />
+									<Heart className={`h-5 w-5 transition-all duration-300 ${isMounted && isFavorite(menuItem.id) ? 'fill-current' : ''}`} />
 								</Button>
 							</div>
 
@@ -210,7 +229,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 						<div className="space-y-4">
 							<h1 className="text-3xl lg:text-4xl font-bold">{menuItem.name}</h1>
 							<p className="text-lg text-muted-foreground">{menuItem.description}</p>
-							<div className="text-2xl font-bold text-primary">{formatCurrency(menuItem.price)}</div>
+							<div className="text-2xl font-bold text-primary">{menuItem.price === 0 ? 'Gratis' : formatCurrency(menuItem.price)}</div>
 						</div>
 
 						{/* Toppings Selection */}
@@ -223,28 +242,82 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 									{menuItem.toppings.map((topping) => {
 										const selected = selectedToppings.find((t) => t.id === topping.id);
 										const currentStock = getToppingStock(topping);
-										const isOutOfStock = currentStock <= 0;
+										const isFree = topping.price === 0;
+
+										// Disable hanya jika stok finite dan habis
+										const isOutOfStock = Number.isFinite(currentStock) ? (currentStock as number) <= 0 : false;
+
 										return (
 											<div key={topping.id} className="flex items-center justify-between">
 												<div className="flex items-center space-x-3">
-													<Checkbox id={topping.id} checked={!!selected} onCheckedChange={(checked) => handleToppingChange(topping, checked as boolean)} disabled={isOutOfStock} />
+													<Checkbox
+														id={topping.id}
+														checked={!!selected}
+														onCheckedChange={(checked) => {
+															const okToSelect = checked === true && (!Number.isFinite(currentStock) || (currentStock as number) > 0);
+
+															if (okToSelect) {
+																// Untuk topping gratis, quantity fix = 1
+																setSelectedToppings([...selectedToppings, { ...topping, quantity: 1 }]);
+															} else if (checked === false) {
+																setSelectedToppings(selectedToppings.filter((t) => t.id !== topping.id));
+															} else {
+																// stok habis (finite <= 0)
+																toast.error('Topping habis', {
+																	duration: 1200,
+																	position: 'top-center',
+																});
+															}
+														}}
+														disabled={isOutOfStock}
+													/>
+
 													<label htmlFor={topping.id} className={`text-sm font-medium cursor-pointer ${isOutOfStock ? 'text-destructive' : ''}`}>
 														{topping.name} {isOutOfStock && '(Habis)'}
 													</label>
-													{!!selected && (
+
+													{/* Kontrol quantity hanya muncul bila TIDAK gratis */}
+													{!!selected && !isFree && (
 														<div className="flex items-center space-x-1 ml-2">
-															<Button variant="outline" size="icon" onClick={() => handleToppingQuantity(topping.id, selected.quantity - 1, currentStock)} disabled={selected.quantity <= 1}>
+															<Button
+																variant="outline"
+																size="icon"
+																onClick={() => setSelectedToppings(selectedToppings.map((t) => (t.id === topping.id ? { ...t, quantity: Math.max(1, (t.quantity ?? 1) - 1) } : t)))}
+																disabled={(selected.quantity ?? 1) <= 1}
+															>
 																<Minus className="h-3 w-3" />
 															</Button>
-															<span className="text-sm font-semibold w-6 text-center">{selected.quantity}</span>
-															<Button variant="outline" size="icon" onClick={() => handleToppingQuantity(topping.id, selected.quantity + 1, currentStock)} disabled={selected.quantity >= currentStock}>
+
+															<span className="text-sm font-semibold w-6 text-center">{selected.quantity ?? 1}</span>
+
+															<Button
+																variant="outline"
+																size="icon"
+																onClick={() => {
+																	const maxStock = currentStock; // bisa Infinity
+																	const next = (selected.quantity ?? 1) + 1;
+																	setSelectedToppings(
+																		selectedToppings.map((t) =>
+																			t.id === topping.id
+																				? {
+																						...t,
+																						quantity: Math.min(next, Number.isFinite(maxStock) ? (maxStock as number) : next),
+																				  }
+																				: t
+																		)
+																	);
+																}}
+																disabled={Number.isFinite(currentStock) ? (selected.quantity ?? 1) >= (currentStock as number) : false}
+															>
 																<Plus className="h-3 w-3" />
 															</Button>
-															<span className="text-xs text-muted-foreground ml-2">Stok: {currentStock - selected.quantity}</span>
+
+															<span className="text-xs text-muted-foreground ml-2">Stok: {Number.isFinite(currentStock) ? (currentStock as number) - (selected.quantity ?? 1) : 'Banyak'}</span>
 														</div>
 													)}
 												</div>
-												<span className="text-sm text-muted-foreground">+{formatCurrency(topping.price)}</span>
+
+												<span className="text-sm text-muted-foreground">{isFree ? 'Gratis' : formatCurrency(topping.price)}</span>
 											</div>
 										);
 									})}
@@ -253,34 +326,36 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 						)}
 
 						{/* Quantity Selector */}
-						<Card>
-							<CardContent className="p-4">
-								<div className="flex items-center justify-between">
-									<span className="font-medium">Jumlah</span>
-									<div className="flex items-center space-x-3">
-										<Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={!isMounted || quantity <= 1}>
-											<Minus className="h-4 w-4" />
-										</Button>
-										<span className="text-lg font-semibold w-8 text-center">{quantity}</span>
-										<Button variant="outline" size="icon" onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))} disabled={!isMounted || quantity >= maxQuantity}>
-											<Plus className="h-4 w-4" />
-										</Button>
+						{menuItem.price > 0 && (
+							<Card>
+								<CardContent className="p-4">
+									<div className="flex items-center justify-between">
+										<span className="font-medium">Jumlah</span>
+										<div className="flex items-center space-x-3">
+											<Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={!isMounted || quantity <= 1}>
+												<Minus className="h-4 w-4" />
+											</Button>
+											<span className="text-lg font-semibold w-8 text-center">{quantity}</span>
+											<Button variant="outline" size="icon" onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))} disabled={!isMounted || quantity >= maxQuantity}>
+												<Plus className="h-4 w-4" />
+											</Button>
+										</div>
 									</div>
-								</div>
-								{isMounted && (
-									<div className="mt-2 text-sm text-muted-foreground">
-										Sisa stok: <span className="font-bold text-primary">{maxQuantity}</span>
-									</div>
-								)}
-							</CardContent>
-						</Card>
+									{isMounted && (
+										<div className="mt-2 text-sm text-muted-foreground">
+											Sisa stok: <span className="font-bold text-primary">{maxQuantity}</span>
+										</div>
+									)}
+								</CardContent>
+							</Card>
+						)}
 
 						{/* Price Summary */}
 						<Card className="bg-muted/50">
 							<CardContent className="p-4 space-y-3">
 								<div className="flex justify-between text-sm">
 									<span>Harga dasar ({quantity}x)</span>
-									<span>{formatCurrency(menuItem.price * quantity)}</span>
+									<span>{menuItem.price === 0 ? 'Gratis' : formatCurrency(menuItem.price * quantity)}</span>
 								</div>
 								{selectedToppings.length > 0 && (
 									<>
