@@ -28,7 +28,7 @@ export function HeroSection() {
 						<div className="flex flex-wrap gap-6 text-sm">
 							<div className="flex items-center space-x-2">
 								<Clock className="h-4 w-4 text-primary shrink-0" />
-								<span>Buka {aboutUs.openingHours}</span>
+								<span>Buka Senin - Sabtu: {aboutUs.openingHours}</span>
 							</div>
 							<div className="flex items-center space-x-2">
 								<MapPin className="h-4 w-4 text-primary shrink-0" />
