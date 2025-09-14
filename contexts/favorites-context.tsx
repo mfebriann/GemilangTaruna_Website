@@ -47,7 +47,7 @@ function favoritesReducer(state: FavoritesState, action: FavoritesAction): Favor
 }
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
-	// Ambil initial state dari localStorage jika ada
+	// Get initial state from localStorage if exists
 	const getInitialState = (): FavoritesState => {
 		if (typeof window !== 'undefined') {
 			const savedFavorites = localStorage.getItem('warung-favorites');
