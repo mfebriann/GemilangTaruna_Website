@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Heart, ArrowLeft, Trash2 } from 'lucide-react';
 import { useFavorites } from '@/contexts/favorites-context';
-import { useEffect, useState } from 'react';
 import { MenuCard } from '../menu/menu-card';
 
 export function FavoritesContent() {
