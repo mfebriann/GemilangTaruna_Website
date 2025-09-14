@@ -19,7 +19,7 @@ export const aboutUs = {
 	openingHours: '09:00 - 20:00',
 	location: 'Jl. Taruna Raya No.12, RT.10/RW.3, Serdang, Kec. Kemayoran, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10650',
 	whatsapp: '6283890055830',
-	website: 'https://gemilang-taruna-website.vercel.app/',
+	website: 'https://gemilang-taruna-website.vercel.app',
 };
 
 export const formatWhatsappNumber = () => {
