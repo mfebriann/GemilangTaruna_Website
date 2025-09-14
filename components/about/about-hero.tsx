@@ -26,7 +26,7 @@ export function AboutHero() {
 						</div>
 						<div className="flex items-center space-x-2 text-sm">
 							<Users className="h-4 w-4 text-primary" />
-							<span className="font-medium">1000+ Pelanggan Puas</span>
+							<span className="font-medium">100+ Pelanggan Puas</span>
 						</div>
 						<div className="flex items-center space-x-2 text-sm">
 							<Heart className="h-4 w-4 text-red-500" />
