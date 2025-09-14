@@ -39,7 +39,6 @@ export const metadata: Metadata = {
 	},
 	applicationName: aboutUs.name,
 	category: 'Food & Drink',
-	themeColor: '#ffffff',
 	verification: {
 		google: 'googlebc14674711e6e563',
 	},
