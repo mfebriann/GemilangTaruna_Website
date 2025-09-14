@@ -12,6 +12,7 @@ import { CartItem, Topping, useCart } from '@/contexts/cart-context';
 import { aboutUs, formatCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'react-hot-toast';
 import { useEffect, useState } from 'react';
+import { useShop } from '@/contexts/shop-context';
 
 export function CartContent() {
 	// Helper to build edit URL with quantity and topping quantities
@@ -30,6 +31,8 @@ export function CartContent() {
 	const [openNotes, setOpenNotes] = useState<{ [key: string]: boolean }>({});
 	const [isCheckoutDisabled, setIsCheckoutDisabled] = useState<boolean>(false);
 	const [customerName, setCustomerName] = useState<string>('');
+	const { state: shop } = useShop();
+	const isShopOpen = shop.isOpenEffective;
 
 	useEffect(() => {
 		setIsMounted(true);
@@ -116,7 +119,7 @@ export function CartContent() {
 
 		setTimeout(() => {
 			localStorage.removeItem('warung-cart');
-			// NOTE: sengaja tidak menghapus 'warung-customer-name' agar tetap autofill di pesanan berikutnya
+			// NOTE: Intentionally keep 'warung-customer-name' for autofill in future orders
 			dispatch({ type: 'CLEAR_CART' });
 			setIsCheckoutDisabled(false);
 		}, duration + 500);
@@ -135,7 +138,7 @@ export function CartContent() {
 	};
 
 	if (!isMounted) {
-		// Hindari render konten sebelum client mount
+		// Avoid rendering content before client mount
 		return null;
 	}
 	if (!Array.isArray(state?.items) || state.items.length === 0) {
@@ -305,7 +308,7 @@ export function CartContent() {
 								</div>
 
 								{/* Checkout Button */}
-								<Button onClick={handleCheckout} size="lg" className="w-full" disabled={isCheckoutDisabled} aria-label="Lanjutkan pesanan melalui WhatsApp">
+								<Button onClick={handleCheckout} size="lg" className="w-full" disabled={isCheckoutDisabled || !isShopOpen} aria-label="Lanjutkan pesanan melalui WhatsApp">
 									<MessageCircle className="h-5 w-5 mr-2" />
 									Pesan via WhatsApp
 								</Button>

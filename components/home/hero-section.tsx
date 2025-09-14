@@ -4,37 +4,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Star, Clock, MapPin } from 'lucide-react';
-import { aboutUs, getJakartaNow, handleWhatsAppOrder, isMonToSat, storeHours } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { aboutUs, handleWhatsAppOrder } from '@/lib/utils';
 import { Badge } from '../ui/badge';
+import { useShop } from '@/contexts/shop-context';
 
 export function HeroSection() {
-	const [isShopOpen, setIsShopOpen] = useState<boolean>(false);
-
-	useEffect(() => {
-		const compute = () => {
-			const { weekday, hour } = getJakartaNow();
-			const openToday = isMonToSat(weekday);
-			const openByHour = hour >= storeHours.open && hour < storeHours.close;
-			setIsShopOpen(openToday && openByHour);
-		};
-
-		compute();
-
-		const now = new Date();
-		const msToNextMinute = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
-
-		let intervalId: number | null = null;
-		const timeoutId = window.setTimeout(() => {
-			compute();
-			intervalId = window.setInterval(compute, 60_000); // cek tiap menit
-		}, msToNextMinute);
-
-		return () => {
-			window.clearTimeout(timeoutId);
-			if (intervalId !== null) window.clearInterval(intervalId);
-		};
-	}, []);
+	const { state } = useShop();
+	const isShopOpen = state.isOpenEffective;
 
 	return (
 		<section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 py-16 lg:py-24">

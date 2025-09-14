@@ -8,17 +8,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Star, Plus, Minus, ShoppingCart, Clock, Heart } from 'lucide-react';
+import { ArrowLeft, Star, Plus, Minus, ShoppingCart, Clock, Heart, CircleSlash2, StarHalf } from 'lucide-react';
 import type { CartItem, MenuItem, Topping } from '@/contexts/cart-context';
 import { toNumericStock, useCart } from '@/contexts/cart-context';
 import { useFavorites } from '@/contexts/favorites-context';
 import { formatCurrency } from '@/lib/utils';
 import { toast, Toaster } from 'react-hot-toast';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useShop } from '@/contexts/shop-context';
 
 export interface MenuDetailProps {
-	menuItem: MenuItem;
+	menuItem: MenuItem & { rating?: number; ratingCount?: number };
 	editItem?: CartItem | null;
+}
+
+function Stars({ value, size = 18 }: { value: number; size?: number }) {
+	const full = Math.floor(value);
+	const hasHalf = value % 1 >= 0.5;
+	const stars = [1, 2, 3, 4, 5];
+
+	return (
+		<div className="flex items-center gap-1" aria-label={`Rating ${value.toFixed(1)} dari 5`}>
+			{stars.map((i) => {
+				if (i <= full) {
+					return <Star key={i} className="fill-current text-yellow-500" style={{ width: size, height: size }} />;
+				}
+				if (i === full + 1 && hasHalf) {
+					return <StarHalf key={i} className="fill-current text-yellow-500" style={{ width: size, height: size }} />;
+				}
+				return <Star key={i} className="text-muted-foreground/30" style={{ width: size, height: size }} />;
+			})}
+		</div>
+	);
 }
 
 export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
@@ -31,6 +52,8 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	const itemId = searchParams.get('itemId') || undefined;
 	const [quantity, setQuantity] = useState(isEditMode && editItem ? editItem.quantity : 1);
 	const router = useRouter();
+	const { state: shop } = useShop();
+	const isShopOpen = shop.isOpenEffective;
 
 	const editingItem = isEditMode ? editItem ?? state.items.find((i) => i.id === itemId) : null;
 	const baseAutoTopping = (menuItem.toppings ?? []).find((t) => t.autoSelect) || null;
@@ -82,7 +105,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 		setSelectedToppings((prev) => prev.map((p) => (p.id === baseAutoTopping.id ? { ...p, quantity } : p)));
 	}, [quantity, baseAutoTopping]);
 
-	// Minimum toppings
 	const meetsMinToppings = () => {
 		const min = menuItem.minToppingsRequired ?? 0;
 		return selectedToppings.length >= min;
@@ -91,7 +113,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 
 	function getToppingStock(topping: Topping): number {
 		const base = toNumericStock(topping.stock);
-
 		if (!isMounted) return base;
 		if (isEditMode) return base;
 		if (!Number.isFinite(base)) return Infinity;
@@ -115,34 +136,20 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	const maxQuantity = Number.isFinite(baseMenuStock) ? Math.max(0, (baseMenuStock as number) - totalInCartExcludingEdit) : Infinity;
 
 	const selectedBase = baseAutoTopping ? selectedToppings.find((t) => t.id === baseAutoTopping.id) || null : null;
-
 	const basePricePerUnit = selectedBase ? selectedBase.price : menuItem.price;
-
 	const otherSelectedToppings = selectedToppings.filter((t) => !selectedBase || t.id !== selectedBase.id);
 	const otherToppingsSubtotal = otherSelectedToppings.reduce((sum, t) => sum + t.price * t.quantity, 0);
-
 	const uiTotalPrice = basePricePerUnit * quantity + otherToppingsSubtotal;
 	const calculateTotalPrice = () => uiTotalPrice;
 
 	const handleAddToCart = () => {
-		if (!menuItem.available) return;
-
-		if (!menuItem.available) {
-			toast.error('Menu tidak tersedia', { duration: 1500, position: 'top-center' });
-			return;
-		}
-
 		if (quantity > maxQuantity) {
 			toast.error(`Stok tidak cukup. Sisa stok hanya ${maxQuantity}`, { duration: 1500, position: 'top-center' });
 			return;
 		}
-
 		if (!meetsMinToppings()) {
 			const min = menuItem.minToppingsRequired ?? 0;
-			toast.error(`Pilih minimal ${min} topping untuk menu ini.`, {
-				duration: 1500,
-				position: 'top-center',
-			});
+			toast.error(`Pilih minimal ${min} topping untuk menu ini.`, { duration: 1500, position: 'top-center' });
 			return;
 		}
 
@@ -150,15 +157,10 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 
 		dispatch({
 			type: 'ADD_ITEM',
-			payload: {
-				menuItem,
-				selectedToppings: payloadToppings,
-				quantity,
-			},
+			payload: { menuItem, selectedToppings: payloadToppings, quantity },
 		});
 
 		toast.success(`${quantity}x ${menuItem.name} ditambahkan ke keranjang!`, { duration: 1500, position: 'top-center' });
-
 		setQuantity(1);
 		setSelectedToppings([]);
 	};
@@ -171,29 +173,17 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 
 		dispatch({
 			type: 'EDIT_ITEM',
-			payload: {
-				id: targetId,
-				menuItem,
-				selectedToppings: payloadToppings,
-				quantity,
-			},
+			payload: { id: targetId, menuItem, selectedToppings: payloadToppings, quantity },
 		});
 
 		const duration = 1000;
-		toast.success(`Pesananan ${menuItem.name} berhasil diubah!`, {
-			duration,
-			position: 'top-center',
-		});
-
-		setTimeout(() => {
-			router.push('/cart');
-		}, duration + 500);
+		toast.success(`Pesananan ${menuItem.name} berhasil diubah!`, { duration, position: 'top-center' });
+		setTimeout(() => router.push('/cart'), duration + 500);
 	};
 
 	return (
 		<section className="py-8 lg:py-12">
 			<div className="container mx-auto px-4">
-				{/* Back Button */}
 				<div className="mb-8">
 					<Link href="/menu">
 						<Button variant="ghost" className="mb-4" aria-label="Kembali ke halaman menu">
@@ -204,13 +194,11 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 				</div>
 
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-					{/* Left Column - Image */}
 					<div className="space-y-4">
 						<div className="relative aspect-square rounded-2xl overflow-hidden bg-muted">
-							<Image src={menuItem.image || '/placeholder.svg'} alt={menuItem.name} fill className="object-cover" priority />
+							<Image src={menuItem.image || '/placeholder.svg'} alt={menuItem.name} fill className={`object-cover ${!menuItem.stock || !isShopOpen ? 'grayscale' : ''}`} priority />
 							<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
-							{/* Favorite Button */}
 							<div className="absolute top-4 right-4">
 								<Button
 									variant="ghost"
@@ -221,12 +209,9 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 									}`}
 									onClick={() => {
 										if (!isMounted) return;
-
 										const wasInFavorites = isFavorite(menuItem.id);
 										toggleFavorite(menuItem);
-
 										toast.dismiss('favorite-toast');
-
 										if (!wasInFavorites) {
 											toast(`${menuItem.name} telah ditambahkan ke favorit`, { id: 'favorite-toast', duration: 1000, position: 'top-center', icon: '💖' });
 										} else {
@@ -238,7 +223,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 								</Button>
 							</div>
 
-							{/* Badges */}
 							<div className="absolute top-4 left-4 flex flex-col gap-2">
 								{menuItem.bestSeller && (
 									<Badge className="bg-yellow-500 text-yellow-900 hover:bg-yellow-500">
@@ -251,13 +235,17 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 								</Badge>
 							</div>
 
-							{/* Availability */}
 							<div className="absolute bottom-4 right-4">
-								{menuItem.available ? (
-									<Badge className="bg-green-500 text-white">Tersedia</Badge>
-								) : (
+								{!isShopOpen && (
 									<Badge variant="destructive">
 										<Clock className="h-3 w-3 mr-1" />
+										Tutup
+									</Badge>
+								)}
+								{isShopOpen && Number(menuItem.stock) > 0 && <Badge className="bg-green-500 text-white">Tersedia</Badge>}
+								{isShopOpen && !menuItem.stock && (
+									<Badge variant="destructive">
+										<CircleSlash2 className="h-3 w-3 mr-1" />
 										Habis
 									</Badge>
 								)}
@@ -265,15 +253,23 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 						</div>
 					</div>
 
-					{/* Right Column - Details */}
 					<div className="space-y-6">
-						<div className="space-y-4">
+						<div className="space-y-2">
 							<h1 className="text-3xl lg:text-4xl font-bold">{menuItem.name}</h1>
+
+							{typeof menuItem.rating === 'number' && typeof menuItem.ratingCount === 'number' && (
+								<div className="flex items-center gap-3">
+									<Stars value={menuItem.rating} />
+									<span className="text-sm text-muted-foreground">
+										{menuItem.rating.toFixed(1)} • {menuItem.ratingCount} Review{menuItem.ratingCount !== 1 ? 's' : ''}
+									</span>
+								</div>
+							)}
+
 							<p className="text-lg text-muted-foreground">{menuItem.description}</p>
-							<div className="text-2xl font-bold text-primary">{menuItem.price === 0 ? (selectedBase ? formatCurrency(selectedBase.price) : 'Gratis') : formatCurrency(menuItem.price)}</div>
+							<div className="text-2xl font-bold text-primary">{menuItem.price === 0 ? (baseAutoTopping ? formatCurrency(baseAutoTopping.price) : 'Gratis') : formatCurrency(menuItem.price)}</div>
 						</div>
 
-						{/* Toppings Selection */}
 						{menuItem.toppings && menuItem.toppings.length > 0 && (
 							<Card>
 								<CardHeader>
@@ -285,7 +281,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 										const currentStock = getToppingStock(topping);
 										const isFree = topping.price === 0;
 										const isOutOfStock = Number.isFinite(currentStock) ? (currentStock as number) <= 0 : false;
-
 										const lockQty = !!topping.main && !!topping.autoSelect;
 
 										return (
@@ -297,7 +292,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 														disabled={isOutOfStock}
 														onCheckedChange={(checked) => {
 															const okToSelect = checked === true && (!Number.isFinite(currentStock) || (currentStock as number) > 0);
-
 															if (okToSelect) {
 																setSelectedToppings((prev) => {
 																	if (prev.some((p) => p.id === topping.id)) return prev;
@@ -370,7 +364,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 							</Card>
 						)}
 
-						{/* Quantity Selector */}
 						{menuItem.price > 0 || selectedBase ? (
 							<Card>
 								<CardContent className="p-4">
@@ -397,7 +390,6 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 							</Card>
 						) : null}
 
-						{/* Price Summary */}
 						<Card className="bg-muted/50">
 							<CardContent className="p-4 space-y-3">
 								<div className="flex justify-between text-sm">
@@ -428,24 +420,20 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 							</CardContent>
 						</Card>
 
-						{/* Add to Cart Button */}
 						{isEditMode ? (
-							<Button onClick={handleEditOrder} size="lg" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={!isMounted || !menuItem.available || disableForMinTop} aria-label={`Ubah pesanan ${menuItem.name}`}>
+							<Button onClick={handleEditOrder} size="lg" className="w-full bg-blue-500 hover:bg-blue-600 text-white" disabled={!isMounted || !menuItem.stock || disableForMinTop || !isShopOpen} aria-label={`Ubah pesanan ${menuItem.name}`}>
 								<ShoppingCart className="h-5 w-5 mr-2" />
 								Ubah Pesanan
 							</Button>
 						) : (
-							<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.available || maxQuantity <= 0 || disableForMinTop} aria-label={`Tambah ${quantity}x ${menuItem.name} ke keranjang`}>
+							<Button onClick={handleAddToCart} size="lg" className="w-full" disabled={!isMounted || !menuItem.stock || maxQuantity <= 0 || disableForMinTop || !isShopOpen} aria-label={`Tambah ${quantity}x ${menuItem.name} ke keranjang`}>
 								<ShoppingCart className="h-5 w-5 mr-2" />
 								Tambah ke Keranjang
 							</Button>
 						)}
 
 						{!meetsMinToppings() && <p className="text-xs text-destructive text-center">Pilih minimal {menuItem.minToppingsRequired ?? 0} topping untuk melanjutkan.</p>}
-
 						{maxQuantity <= 0 && <p className="text-sm text-destructive text-center">Stok habis, tidak bisa menambah ke keranjang.</p>}
-
-						{!menuItem.available && <p className="text-sm text-muted-foreground text-center">Maaf, menu ini sedang tidak tersedia. Silakan pilih menu lainnya.</p>}
 					</div>
 				</div>
 			</div>
