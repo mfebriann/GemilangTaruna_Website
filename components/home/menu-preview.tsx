@@ -13,7 +13,7 @@ export function MenuPreview() {
 
 	const getFilteredMenu = () => {
 		if (activeCategory === 'all') {
-			return menuData.filter((item) => item.available).slice(0, 6);
+			return menuData.filter((item) => item.favorite).slice(0, 6);
 		}
 		return getMenuByCategory(activeCategory)
 			.filter((item) => item.available)
