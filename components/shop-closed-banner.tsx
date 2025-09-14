@@ -24,20 +24,20 @@ export default function ShopClosedBanner({ className }: { className?: string }) 
 
   "
 			>
-				<div className="flex items-start sm:items-center gap-3 sm:gap-4">
-					<div className="mt-0.5 shrink-0 rounded-full bg-white/40 p-2 dark:bg-white/10">
-						<CircleAlert className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+				<div className="flex items-center gap-3 sm:gap-4">
+					<div className="mt-0.5 shrink-0 rounded-full bg-white/40 p-2">
+						<CircleAlert className="h-5 w-5 text-emerald-700" />
 					</div>
 
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
-							<p className="text-sm sm:text-base font-semibold text-emerald-900 dark:text-emerald-200">{aboutUs.name} saat ini tutup</p>
+							<p className="text-sm sm:text-base font-semibold text-emerald-900">{aboutUs.name} saat ini tutup</p>
 							<span className="hidden sm:inline text-xs text-muted-foreground">•</span>
 							<p className="hidden sm:inline text-sm text-muted-foreground">Buka Senin - Sabtu: {aboutUs.openingHours}</p>
 						</div>
 					</div>
 
-					<button aria-label="Tutup banner" className="mt-0.5 rounded-md p-1 text-black/60 hover:bg-black/5 hover:text-black dark:text-white/60 dark:hover:bg-white/10" onClick={() => setHidden(true)}>
+					<button aria-label="Tutup banner" className="mt-0.5 rounded-md p-1 text-black/60 hover:bg-black/5 hover:text-black" onClick={() => setHidden(true)}>
 						<X className="h-4 w-4" />
 					</button>
 				</div>
