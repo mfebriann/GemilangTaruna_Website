@@ -88,7 +88,7 @@ export function AboutContent() {
 							{/* Floating Elements */}
 							<div className="absolute top-6 right-6 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
 								<div className="text-center">
-									<div className="text-2xl font-bold text-primary">2+</div>
+									<div className="text-2xl font-bold text-primary">{new Date().getFullYear() - aboutUs.since}+</div>
 									<div className="text-xs text-muted-foreground">Tahun Berpengalaman</div>
 								</div>
 							</div>
