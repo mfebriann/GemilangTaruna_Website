@@ -82,7 +82,7 @@ export function AboutContent() {
 					{/* Right Content - Image */}
 					<div className="relative">
 						<div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 to-secondary/10">
-							<Image src="/indonesian-ayam-geprek-fried-chicken-with-sambal.jpg" alt={`Suasana ${aboutUs.name}`} fill className="object-cover" />
+							<Image src="/suasana-warung.webp" alt={`Suasana ${aboutUs.name}`} fill className="object-cover" />
 							<div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
 
 							{/* Floating Elements */}
@@ -95,7 +95,7 @@ export function AboutContent() {
 
 							<div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
 								<div className="text-center">
-									<div className="text-2xl font-bold text-primary">1000+</div>
+									<div className="text-2xl font-bold text-primary">100+</div>
 									<div className="text-xs text-muted-foreground">Pelanggan Setia</div>
 								</div>
 							</div>
