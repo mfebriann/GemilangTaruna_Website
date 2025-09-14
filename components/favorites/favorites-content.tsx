@@ -9,11 +9,6 @@ import { MenuCard } from '../menu/menu-card';
 
 export function FavoritesContent() {
 	const { state, dispatch } = useFavorites();
-	const [isHydrated, setIsHydrated] = useState(false);
-
-	useEffect(() => {
-		setIsHydrated(true);
-	}, []);
 
 	const handleClearFavorites = () => {
 		dispatch({ type: 'CLEAR_FAVORITES' });
