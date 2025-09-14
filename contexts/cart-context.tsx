@@ -21,8 +21,11 @@ export interface MenuItem {
 	available: boolean;
 	bestSeller: boolean;
 	stock: StockInput;
-	toppings?: Topping[];
 	minToppingsRequired?: number;
+	favorite: boolean;
+	rating?: number;
+	ratingCount?: number;
+	toppings?: Topping[];
 }
 
 export interface Topping {
@@ -58,13 +61,13 @@ type CartAction =
 	| { type: 'CLEAR_CART' }
 	| { type: 'LOAD_CART'; payload: CartState };
 
-// Normalisasi qty topping minimal 1
+// Normalize topping quantity to minimum 1
 const withQty = (tops: Topping[]) => (tops ?? []).map((t) => ({ ...t, quantity: t.quantity ?? 1 }));
 
-// Subtotal topping
+// Calculate toppings subtotal
 const toppingsSubtotal = (tops: Topping[]): number => (tops ?? []).reduce((sum, t) => sum + (t.price || 0) * (t.quantity ?? 1), 0);
 
-// Bandingkan daftar topping berdasar ID (tanpa urutan)
+// Compare topping lists by ID (order independent)
 const isSameToppings = (a: Topping[], b: Topping[]) => {
 	if (a.length !== b.length) return false;
 	const aSet = new Set(a.map((t) => t.id));
@@ -79,7 +82,7 @@ const isSameToppings = (a: Topping[], b: Topping[]) => {
 const CartContext = createContext<{ state: CartState; dispatch: React.Dispatch<CartAction> } | null>(null);
 
 function cartReducer(state: CartState, action: CartAction): CartState {
-	// Pastikan state.items selalu array
+	// Ensure state.items is always an array
 	const items = Array.isArray(state?.items) ? state.items : [];
 
 	switch (action.type) {
@@ -88,32 +91,32 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
 			const topsA = withQty(selectedToppings);
 
-			// Cek apakah kombinasi menu+toppings yang sama sudah ada
+			// Check if the same menu+toppings combination exists
 			const existingItemIndex = items.findIndex((item) => item.menuItem.id === menuItem.id && isSameToppings(item.selectedToppings, topsA));
 
-			// Stok menu utama (konversi union -> number | Infinity)
+			// Base menu stock (convert union -> number | Infinity)
 			const baseStock = toNumericStock(menuItem.stock);
 
-			// Total qty menu sama yang sudah ada di cart
+			// Total quantity of same menu items in cart
 			const totalQtyInCart = items.filter((item) => item.menuItem.id === menuItem.id).reduce((sum, item) => sum + item.quantity, 0);
 
-			// Stok tersedia: finite -> kurangi cart; infinite -> Infinity
+			// Available stock: finite -> subtract cart qty; infinite -> Infinity
 			const availableStock = Number.isFinite(baseStock) ? baseStock - totalQtyInCart : Number.POSITIVE_INFINITY;
 
 			if (quantity > availableStock) {
-				// Melebihi stok menu, abaikan (toast bisa ditangani di caller)
+				// Exceeds menu stock, ignore (toast can be handled by caller)
 				return state;
 			}
 
-			// Jika item dgn kombinasi topping sama sudah ada -> gabungkan
+			// If item with same topping combination exists -> merge
 			if (existingItemIndex > -1) {
 				const updatedItems = [...items];
 				const existingItem = updatedItems[existingItemIndex];
 
-				// Gabung qty menu
+				// Merge menu quantities
 				const newQuantity = existingItem.quantity + quantity;
 
-				// Merge topping: jumlahkan quantity per ID
+				// Merge toppings: sum quantities by ID
 				const mergedMap = new Map<string, Topping>();
 				existingItem.selectedToppings.forEach((t) => mergedMap.set(t.id, { ...t, quantity: t.quantity ?? 1 }));
 				topsA.forEach((t) => {
@@ -167,7 +170,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 		case 'UPDATE_QUANTITY': {
 			const { id, quantity } = action.payload;
 
-			// Hapus item jika qty <= 0
+			// Remove item if quantity <= 0
 			if (quantity <= 0) {
 				return cartReducer(state, { type: 'REMOVE_ITEM', payload: id });
 			}
@@ -175,15 +178,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 			const targetItem = items.find((item) => item.id === id);
 			if (!targetItem) return state;
 
-			// Total qty item lain dengan menu yang sama (kecuali target item)
+			// Total quantity of other items with same menu (excluding target item)
 			const otherQty = items.filter((item) => item.menuItem.id === targetItem.menuItem.id && item.id !== id).reduce((sum, item) => sum + item.quantity, 0);
 
-			// Stok menu utama (finite -> cek batas; infinite -> bebas)
+			// Base menu stock (finite -> check limit; infinite -> unlimited)
 			const baseStock = toNumericStock(targetItem.menuItem.stock);
 			const availableStock = Number.isFinite(baseStock) ? baseStock - otherQty : Number.POSITIVE_INFINITY;
 
 			if (quantity > availableStock) {
-				// Melebihi stok menu, abaikan
+				// Exceeds menu stock, ignore
 				return state;
 			}
 
@@ -250,7 +253,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 /* ========= Provider & Hook ========= */
 
 export function CartProvider({ children }: { children: ReactNode }) {
-	// Ambil initial state dari localStorage jika ada
+	// Get initial state from localStorage if exists
 	const getInitialState = (): CartState => {
 		if (typeof window !== 'undefined') {
 			const savedCart = localStorage.getItem('warung-cart');

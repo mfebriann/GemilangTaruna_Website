@@ -1,7 +1,7 @@
 import type { MenuItem } from '@/contexts/cart-context';
 import { formatCurrency } from '@/lib/utils';
 
-export const menuData: MenuItem[] = [
+export const menuData: (MenuItem & { favorite?: boolean; rating: number; ratingCount: number })[] = [
 	{
 		id: 'seblak',
 		name: 'Seblak',
@@ -13,6 +13,9 @@ export const menuData: MenuItem[] = [
 		bestSeller: true,
 		stock: '-',
 		minToppingsRequired: 1,
+		favorite: true,
+		rating: 4.7,
+		ratingCount: 341,
 		toppings: [
 			{ id: 'seblak-mie', name: 'Mie', price: 2000, stock: '-', autoSelect: true, main: true },
 			{ id: 'seblak-sosis-ayam-panjang', name: 'Sosis Ayam (Panjang)', price: 2000, stock: '-' },
@@ -40,6 +43,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: true,
 		stock: '-',
+		favorite: true,
+		rating: 4.0,
+		ratingCount: 289,
 		toppings: [
 			{ id: 'ayam-geprek-timun', name: 'Timun', price: 0, stock: '-' },
 			{ id: 'ayam-geprek-sambal', name: 'Sambal', price: 0, stock: '-' },
@@ -56,6 +62,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: true,
 		stock: '-',
+		favorite: true,
+		rating: 4.5,
+		ratingCount: 201,
 		toppings: [
 			{ id: 'kebab-beef-timun', name: 'Timun', price: 0, stock: '-' },
 			{ id: 'kebab-beef-selada', name: 'Selada', price: 0, stock: '-' },
@@ -74,6 +83,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: false,
 		stock: '-',
+		favorite: false,
+		rating: 4.3,
+		ratingCount: 112,
 		toppings: [
 			{ id: 'kebab-pisang-keju', name: 'Keju', price: 2000, stock: '-' },
 			{ id: 'kebab-pisang-meses', name: 'Meses Ceres', price: 2000, stock: '-' },
@@ -89,6 +101,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: false,
 		stock: '-',
+		favorite: false,
+		rating: 4.4,
+		ratingCount: 158,
 		toppings: [
 			{ id: 'pisang-keju-meses', name: 'Meses Ceres', price: 2000, stock: '-' },
 			{ id: 'pisang-keju-keju', name: 'Keju', price: 2000, stock: '-' },
@@ -102,9 +117,12 @@ export const menuData: MenuItem[] = [
 		category: 'makanan',
 		image: '/indonesian-instant-noodles-with-egg-and-vegetables.webp',
 		description: 'Mie instan dengan topping tambahan sesuai selera.',
-		available: true,
+		available: false,
 		bestSeller: false,
-		stock: '-',
+		stock: 0,
+		favorite: false,
+		rating: 4.1,
+		ratingCount: 73,
 		toppings: [
 			{ id: 'mie-sarimi-saos', name: 'Saos', price: 0, stock: '-' },
 			{ id: 'mie-sarimi-sosis-ayam-panjang', name: 'Sosis Ayam (Panjang)', price: 2000, stock: '-' },
@@ -123,6 +141,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: false,
 		stock: '-',
+		favorite: false,
+		rating: 4.2,
+		ratingCount: 95,
 	},
 	{
 		id: 'ovaltine',
@@ -134,6 +155,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: false,
 		stock: '-',
+		favorite: false,
+		rating: 4.4,
+		ratingCount: 123,
 	},
 	{
 		id: 'nutrisari',
@@ -145,6 +169,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: false,
 		stock: '-',
+		favorite: false,
+		rating: 4.3,
+		ratingCount: 140,
 	},
 	{
 		id: 'kopi-hitam',
@@ -156,6 +183,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: false,
 		stock: '-',
+		favorite: false,
+		rating: 4.5,
+		ratingCount: 210,
 	},
 	{
 		id: 'pop-ice',
@@ -167,6 +197,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: true,
 		stock: '-',
+		favorite: true,
+		rating: 4.6,
+		ratingCount: 260,
 		toppings: [
 			{ id: 'pop-ice-keju', name: 'Keju', price: 2000, stock: '-' },
 			{ id: 'pop-ice-meses', name: 'Meses Ceres', price: 2000, stock: '-' },
@@ -182,6 +215,9 @@ export const menuData: MenuItem[] = [
 		available: true,
 		bestSeller: true,
 		stock: '-',
+		favorite: true,
+		rating: 4.7,
+		ratingCount: 380,
 	},
 ];
 
@@ -204,5 +240,5 @@ export const getMenuItemById = (id: string) => {
 	return menuData.find((item) => item.id === id);
 };
 
-// Helper untuk menampilkan harga menu: 0 => "Gratis"
+// Helper function to display menu price: 0 => "Free"
 export const formatMenuPrice = (price: number) => (price === 0 ? 'Gratis' : formatCurrency(price));
