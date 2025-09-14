@@ -8,6 +8,7 @@ import { LoadingScreen } from '@/components/ui/loading-screen';
 import WhatsAppButton from '@/components/ui/whatsapButton';
 import { ShopProvider } from '@/contexts/shop-context';
 import ShopClosedBanner from '@/components/shop-closed-banner';
+import ScrollToTop from '@/components/scroll-to-top';
 
 export function Providers({ children }: { children: React.ReactNode }) {
 	const [isLoading, setIsLoading] = useState(true);
@@ -23,6 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 	return (
 		<ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="gemilang-taruna-theme">
+			<ScrollToTop />
 			{isLoading ? (
 				<LoadingScreen />
 			) : (
