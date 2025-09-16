@@ -53,7 +53,7 @@ export function MenuDetail({ menuItem, editItem }: MenuDetailProps) {
 	const [quantity, setQuantity] = useState(isEditMode && editItem ? editItem.quantity : 1);
 	const router = useRouter();
 	const { state: shop } = useShop();
-	const isShopOpen = shop.isOpenEffective;
+	const isShopOpen = shop.isOpenEffective && !shop.forceClosed;
 
 	const editingItem = isEditMode ? editItem ?? state.items.find((i) => i.id === itemId) : null;
 	const baseAutoTopping = (menuItem.toppings ?? []).find((t) => t.autoSelect) || null;
