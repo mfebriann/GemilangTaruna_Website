@@ -32,7 +32,7 @@ export function CartContent() {
 	const [isCheckoutDisabled, setIsCheckoutDisabled] = useState<boolean>(false);
 	const [customerName, setCustomerName] = useState<string>('');
 	const { state: shop } = useShop();
-	const isShopOpen = shop.isOpenEffective;
+	const isShopOpen = shop.isOpenEffective && !shop.forceClosed;
 
 	useEffect(() => {
 		setIsMounted(true);
